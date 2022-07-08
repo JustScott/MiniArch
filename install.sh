@@ -24,24 +24,8 @@ then
 else
   mkfs.ext4 /dev/sda3
   mount /dev/sda3 /mnt
-if
-
-----------------  Network Configuration ----------------
-clear
-
-echo -n 'Do you need to setup a wirless connection?[y/n](default:y): '
-read wireless
-
-if [ $wireless == 'y' ] || [ $wireless == '' ]
-then
-  echo ' -- Use These Commands -- '
-  echo 'device list'
-  echo 'station wlan0 scan'
-  echo 'station wlan0 get-networks'
-  echo 'station wlan0 connect <ssid>'
-  echo 'exit'
-  iwctl
 fi
+
 
 ----------------  System Settings & Packages ----------------
 clear
