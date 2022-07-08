@@ -5,7 +5,7 @@ clear
 echo -n 'Using Encrypted System?[y/n](default:n): '
 read encrypt_system
 
-----------------  System User Configuration ----------------
+#----------------  System User Configuration ----------------
 clear
 
 echo -n 'Enter System Name: '
@@ -22,7 +22,7 @@ echo $system_name > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name >> /etc/hosts
 
 
-----------------  User Configuration ----------------
+#----------------  User Configuration ----------------
 clear
 
 echo ' - Create A User - '
@@ -35,7 +35,7 @@ passwd $username
 usermod -aG wheel,audio,video,storage $username
 
 
-----------------  System Settings & Packages ----------------
+#----------------  System Settings & Packages ----------------
 clear
 
 # Install the default pacman application
@@ -50,10 +50,10 @@ export LANG=en_US.UTF-8
 locale-gen
 
 
-----------------  Grub Configuration ----------------
+#----------------  Grub Configuration ----------------
 clear
 
-if [ encrypt_system == 'y' ] || [ encrypt_system == 'Y' ] || [ encrypt_system == 'yes' ]
+if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encryption configuration
   echo -e '\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/sda3:cryptdisk"' >> /etc/default/grub
@@ -66,7 +66,7 @@ mkinitcpio -p linux
 grub-install /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
 
-----------------  Final Touches  ----------------
+#----------------  Final Touches  ----------------
 
 # Enabling display and network managers
 systemctl enable gdm NetworkManager
