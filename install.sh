@@ -1,40 +1,13 @@
 #!/bin/bash
 
-echo -n 'Use Encrypted System?[y/n](default:n): '
+echo -n 'Using Encrypted System?[y/n](default:n): '
 read encrypt_system
-
-----------------  Parition Configuration ----------------
-
-# Boot Parition
-mkfs.ext4 /dev/sda1
-mkdir /mnt/boot
-mount /dev/sda1 /mnt/boot
-
-# Swap Partition
-mkswap /dev/sda2
-swapon /dev/sda2
-
-# Encrypted Storage Partition
-if [ encrypt_system == 'y' ] || [ encrypt_system == 'Y' ] || [ encrypt_system == 'yes' ]
-then
-  cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
-  cryptsetup open /dev/sda3 cryptdisk
-  mkfs.ext4 /dev/mapper/cryptdisk
-  mount /dev/mapper/cryptdisk /mnt
-else
-  mkfs.ext4 /dev/sda3
-  mount /dev/sda3 /mnt
-fi
-
 
 ----------------  System Settings & Packages ----------------
 clear
 
 # Install the default pacman application
-pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop git base-devel man-db man-pages
-
-# Base filesystem packages
-pacstrap /mnt base linux linux-firmware vim
+pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
 
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab
