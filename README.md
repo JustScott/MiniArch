@@ -12,8 +12,6 @@ $ cfdisk
 
 # Boot Parition
 $ mkfs.ext4 /dev/sda1
-$ mkdir /mnt/boot
-$ mount /dev/sda1 /mnt/boot
 
 # Swap Partition
 $ mkswap /dev/sda2
@@ -32,6 +30,10 @@ $ mount /dev/mapper/cryptdisk /mnt
 # Unencrypted Filesystem Partition
 $ mkfs.ext4 /dev/sda3
 $ mount /dev/sda3 /mnt
+
+# Finish Boot Partition
+$ mkdir /mnt/boot
+$ mount /dev/sda1 /mnt/boot
 
 -- --
 
