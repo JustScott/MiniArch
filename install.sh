@@ -25,12 +25,14 @@ locale-gen
 ----------------  System User Configuration ----------------
 clear
 
-echo -n 'Enter System Name: '
+echo -n ' - Enter System Name - '
 read system_name
 echo System Name Set as $system_name
 
+clear
+
 # Set the root password
-echo 'Set root password'
+echo '- Set root password -'
 passwd
 
 echo archy > /etc/hostname
