@@ -45,6 +45,9 @@ $ iwctl
 # Put the basic linux dependices on your filesystem parition, + vim,git
 $ pacstrap /mnt base linux linux-firmware vim git
 
+# Tell the system where the partitions are when starting
+$ genfstab -U /mnt >> /mnt/etc/fstab
+
 # Enter your filesystem
 $ arch-chroot /mnt
 
