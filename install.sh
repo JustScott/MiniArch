@@ -22,6 +22,19 @@ echo $system_name > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name >> /etc/hosts
 
 
+----------------  System Settings & Packages ----------------
+clear
+
+# Install the default pacman application
+pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
+
+# Set the keyboard orientation
+echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
+echo LANG='en_US.UTF-8' > /etc/locale.conf
+export LANG=en_US.UTF-8
+locale-gen
+
+
 ----------------  User Configuration ----------------
 clear
 
@@ -33,21 +46,7 @@ echo Username set as $username
 useradd -m $username
 passwd
 usermod -aG wheel,audio,video,storage $username
-
-
-----------------  System Settings & Packages ----------------
-clear
-
-# Install the default pacman application
-pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
-
 echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
-
-# Set the keyboard orientation
-echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
-echo LANG='en_US.UTF-8' > /etc/locale.conf
-export LANG=en_US.UTF-8
-locale-gen
 
 
 ----------------  Grub Configuration ----------------
