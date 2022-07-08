@@ -45,6 +45,9 @@ $ iwctl
 # Put the basic linux dependices on your filesystem parition, + vim,git
 $ pacstrap /mnt base linux linux-firmware vim git
 
+# Enter your filesystem
+$ arch-chroot /mnt
+
 # Clone this repo
 $ git clone https://www.github.com/JustScott/MiniArch.git
 
