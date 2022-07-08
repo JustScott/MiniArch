@@ -10,5 +10,12 @@ $ cfdisk
   |-> /dev/sda2 - 2G - swap
   |-> /dev/sda3 - default
 
+# Download git, and clone this repo
+$ pacman -S git --noconfirm
+$ git clone https://github.com/JustScott/MiniArch.git
+
+# Run the install script
+$ bash MiniArch/install.sh
+
 ```
 
