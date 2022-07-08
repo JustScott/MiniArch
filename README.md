@@ -10,8 +10,15 @@ $ cfdisk
   |-> /dev/sda2 - 2G - swap
   |-> /dev/sda3 - default
 
+# Connecting to a network
+$ iwctl
+[iwd] device list # List the your computers network devices
+[iwd] station wlan0 get-networks  # List the available networks
+[iwd] station wlan0 connect <ssid>  # Connect to your network
+[iwd] exit
+
 # Download git, and clone this repo
-$ pacman -S git --noconfirm
+$ pacman -Syu git --noconfirm
 $ git clone https://www.github.com/JustScott/MiniArch.git
 
 # Run the install script
