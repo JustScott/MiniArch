@@ -31,8 +31,8 @@ clear
 echo '- Set root password -'
 passwd
 
-echo archy > /etc/hostname
-echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   archy' >> /etc/hosts
+echo $system_name > /etc/hostname
+echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name >> /etc/hosts
 
 
 ----------------  User Configuration ----------------
@@ -54,7 +54,7 @@ clear
 if [ encrypt_system == 'y' ] || [ encrypt_system == 'Y' ] || [ encrypt_system == 'yes' ]
 then
   # Encryption configuration
-  echo -e 'GRUB_CMDLINE_LINUX="cryptdevice=/dev/sda3:cryptdisk"\nGRUB_ENABLE_CRYPTDISK=y' >> /etc/default/grub
+  echo -e '\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/sda3:cryptdisk"' >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
@@ -67,8 +67,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ----------------  Final Touches  ----------------
 
 # Enabling display and network managers
-systemctl enable gdm.service
-systemctl enable NetworkManager.service
+systemctl enable gdm NetworkManager
 
 clear
 
