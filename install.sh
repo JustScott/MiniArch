@@ -5,19 +5,6 @@ clear
 echo -n 'Using Encrypted System?[y/n](default:n): '
 read encrypt_system
 
-----------------  System Settings & Packages ----------------
-clear
-
-# Install the default pacman application
-pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
-
-# Set the keyboard orientation
-echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
-echo LANG='en_US.UTF-8' > /etc/locale.conf
-export LANG=en_US.UTF-8
-locale-gen
-
-
 ----------------  System User Configuration ----------------
 clear
 
@@ -47,6 +34,20 @@ useradd -m $username
 passwd
 usermod -aG wheel,audio,video,storage $username
 echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
+
+
+----------------  System Settings & Packages ----------------
+clear
+
+# Install the default pacman application
+pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
+
+# Set the keyboard orientation
+echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
+echo LANG='en_US.UTF-8' > /etc/locale.conf
+export LANG=en_US.UTF-8
+locale-gen
+
 
 ----------------  Grub Configuration ----------------
 clear
