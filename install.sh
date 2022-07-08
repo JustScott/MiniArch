@@ -1,5 +1,7 @@
 #!/bin/bash
 
+clear
+
 echo -n 'Using Encrypted System?[y/n](default:n): '
 read encrypt_system
 
