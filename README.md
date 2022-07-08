@@ -10,13 +10,6 @@ $ cfdisk
   |-> /dev/sda2 - 2G - swap
   |-> /dev/sda3 - default
 
-# Boot Parition
-$ mkfs.ext4 /dev/sda1
-
-# Swap Partition
-$ mkswap /dev/sda2
-$ swapon /dev/sda2
-
 -- Formatting the filesystem parition -- 
   
 # Encrypted Filesystem Partition
@@ -31,11 +24,17 @@ $ mount /dev/mapper/cryptdisk /mnt
 $ mkfs.ext4 /dev/sda3
 $ mount /dev/sda3 /mnt
 
-# Finish Boot Partition
+-- --
+
+# Swap Partition
+$ mkswap /dev/sda2
+$ swapon /dev/sda2
+
+# Boot Parition
+$ mkfs.ext4 /dev/sda1
 $ mkdir /mnt/boot
 $ mount /dev/sda1 /mnt/boot
 
--- --
 
 # Connecting to a network
 $ iwctl
