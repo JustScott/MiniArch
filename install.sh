@@ -71,12 +71,13 @@ grub-install /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
 
 ----------------  Final Touches  ----------------
-clear
 
 # Enabling display and network managers
 systemctl enable gdm.service
 systemctl enable NetworkManager.service
 
-echo -e '\nRun these commands to finish the installation\n'
+clear
+
+echo -e '\n - Run these commands to finish the installation - \n'
 echo '( Remove the installation media before restarting )'
-echo -e '\n - exit\n - umount -a\n - shutdown now'
+echo -e '\n - exit\n - umount -a\n - shutdown now\n'
