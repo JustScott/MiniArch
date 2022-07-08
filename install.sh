@@ -11,12 +11,6 @@ clear
 # Install the default pacman application
 pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
 
-# Tell the system where the partitions are when starting
-genfstab -U /mnt >> /mnt/etc/fstab
-
-# Enter the filesystem as root
-arch-chroot /mnt
-
 # Set the keyboard orientation
 echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
 echo LANG='en_US.UTF-8' > /etc/locale.conf
