@@ -40,16 +40,15 @@ echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   archy' >> /et
 ----------------  User Configuration ----------------
 clear
 
+echo ' - Create A User - '
 echo -n 'Enter Username: '
-read $username
+read username
 echo Username set as $username
 
 useradd -m $username
 passwd
 usermod -aG wheel,audio,video,storage $username
-echo 'When editing this next file, uncomment the first wheel'
-sleep 3
-EDITOR=vim visudo
+echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
 ----------------  Grub Configuration ----------------
 clear
