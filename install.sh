@@ -31,7 +31,7 @@ read username
 echo Username set as $username
 
 useradd -m $username
-passwd
+passwd $username
 usermod -aG wheel,audio,video,storage $username
 
 
