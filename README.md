@@ -12,7 +12,7 @@ $ cfdisk
 
 # Download git, and clone this repo
 $ pacman -S git --noconfirm
-$ git clone https://github.com/JustScott/MiniArch.git
+$ git clone https://www.github.com/JustScott/MiniArch.git
 
 # Run the install script
 $ bash MiniArch/install.sh
