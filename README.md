@@ -43,7 +43,6 @@ $ iwctl
 [iwd] exit
 
 # Put the basic linux dependices on your filesystem parition, + vim,git
-$ pacman -Syu
 $ pacstrap /mnt base linux linux-firmware vim git
 
 # Clone this repo
