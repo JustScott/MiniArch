@@ -57,7 +57,7 @@ if [ encrypt_system == 'y' ] || [ encrypt_system == 'Y' ] || [ encrypt_system ==
 then
   # Encryption configuration
   echo -e '\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/sda3:cryptdisk"' >> /etc/default/grub
-  echo -e 'MODULES=()\nBINARIES\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
+  echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
 mkinitcpio -p linux
