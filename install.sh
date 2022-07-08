@@ -64,7 +64,7 @@ then
   echo -e 'MODULES=()\nBINARIES\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
-mkiniticpio -p linux
+mkinitcpio -p linux
 
 # Actual Grub Install
 grub-install /dev/sda
@@ -77,8 +77,6 @@ clear
 systemctl enable gdm.service
 systemctl enable NetworkManager.service
 
-exit
-umount -a
-echo 'When system shuts down, remove the installation media'
-sleep 5
-shutdown now
+echo -e '\nRun these commands to finish the installation\n'
+echo '( Remove the installation media before restarting )'
+echo -e '\n - exit\n - umount -a\n - shutdown now'
