@@ -72,4 +72,6 @@ systemctl enable gdm NetworkManager
 
 clear
 
+echo -e '\n Type 'exit' to finish the installation \n'
+
 exit
