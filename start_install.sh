@@ -8,7 +8,7 @@ read encrypt_system
 
 #----------------  Parition Formatting ---------------- 
   
-if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
+if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
   # Encrypted Filesystem Partition
   cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
