@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sfdisk /dev/sda < partition_table.txt
+
 clear
 
 echo -n 'Using Encrypted System?[y/n](default:n): '
@@ -50,8 +52,8 @@ echo $encrypt_system > /mnt/temp_var.txt
 
 # Move into /mnt
 clear
-echo -e '\n - Type This Command: bash finish_install.sh - \n'
-arch-chroot /mnt
+# echo -e '\n - Type This Command: bash finish_install.sh - \n'
+arch-chroot /mnt < finish_install.sh
 
 # After finish_install.sh is done
 clear
