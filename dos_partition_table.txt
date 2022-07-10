@@ -6,4 +6,4 @@ sector-size: 512
 
 /dev/sda1 : start=        2048, size=     1048576, type=83, bootable
 /dev/sda2 : start=     1050624, size=     4194304, type=82
-/dev/sda3 : start=     5244928, size=    11532288, type=83
+/dev/sda3 : start=     5244928, size=     , type=83
