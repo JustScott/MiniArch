@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sfdisk /dev/sda < dos_partition_table.txt
+sfdisk /dev/sda < MiniArch/dos_partition_table.txt
 
 clear
 
