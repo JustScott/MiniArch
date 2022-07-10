@@ -11,24 +11,24 @@ read encrypt_system
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encrypted Filesystem Partition
-  $ cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
-  $ cryptsetup open /dev/sda3 cryptdisk
-  $ mkfs.ext4 /dev/mapper/cryptdisk
-  $ mount /dev/mapper/cryptdisk /mnt
+  cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
+  cryptsetup open /dev/sda3 cryptdisk
+  mkfs.ext4 /dev/mapper/cryptdisk
+  mount /dev/mapper/cryptdisk /mnt
 else
   # Unencrypted Filesystem Partition
-  $ mkfs.ext4 /dev/sda3
-  $ mount /dev/sda3 /mnt
+  mkfs.ext4 /dev/sda3
+  mount /dev/sda3 /mnt
 fi
 
 # Swap Partition
-$ mkswap /dev/sda2
-$ swapon /dev/sda2
+mkswap /dev/sda2
+swapon /dev/sda2
 
 # Boot Parition
-$ mkfs.ext4 /dev/sda1
-$ mkdir /mnt/boot
-$ mount /dev/sda1 /mnt/boot
+mkfs.ext4 /dev/sda1
+mkdir /mnt/boot
+mount /dev/sda1 /mnt/boot
 
 
 #----------------  /mnt Prepping ----------------
