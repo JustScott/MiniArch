@@ -23,10 +23,10 @@ pacman -Sy git
 $ git clone https://www.github.com/JustScott/MiniArch.git
 
 # Run the install script
-$ source MiniArch/start_install.sh
+$ bash MiniArch/start_install.sh
 
 # After going through the prompts
-$ source finish_install.sh
+$ bash finish_install.sh
 
 ```
 
