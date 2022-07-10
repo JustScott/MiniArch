@@ -5,6 +5,44 @@ clear
 echo -n 'Using Encrypted System?[y/n](default:n): '
 read encrypt_system
 
+
+#----------------  Parition Formatting ---------------- 
+  
+if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
+then
+  # Encrypted Filesystem Partition
+  $ cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
+  $ cryptsetup open /dev/sda3 cryptdisk
+  $ mkfs.ext4 /dev/mapper/cryptdisk
+  $ mount /dev/mapper/cryptdisk /mnt
+else
+  # Unencrypted Filesystem Partition
+  $ mkfs.ext4 /dev/sda3
+  $ mount /dev/sda3 /mnt
+fi
+
+# Swap Partition
+$ mkswap /dev/sda2
+$ swapon /dev/sda2
+
+# Boot Parition
+$ mkfs.ext4 /dev/sda1
+$ mkdir /mnt/boot
+$ mount /dev/sda1 /mnt/boot
+
+
+#----------------  /mnt Prepping ----------------
+
+# Put the basic linux dependices on your filesystem parition, + vim,git
+$ pacstrap /mnt base linux linux-firmware
+
+# Tell the system where the partitions are when starting
+$ genfstab -U /mnt >> /mnt/etc/fstab
+
+# Enter your filesystem
+$ arch-chroot /mnt
+
+
 #----------------  System User Configuration ----------------
 clear
 
@@ -39,7 +77,7 @@ usermod -aG wheel,audio,video,storage $username
 clear
 
 # Install the default pacman application
-pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel man-db man-pages
+pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm file-roller grub xorg networkmanager sudo htop base-devel vim git man-db man-pages
 
 echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
