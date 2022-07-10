@@ -32,7 +32,7 @@ usermod -aG wheel,audio,video,storage $username
 clear
 
 # Install the default pacman application
-pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gdm nautilus grub xorg networkmanager sudo htop base-devel vim git man-db man-pages
+pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-settings-daemon gnome-calculator gnome-software gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel vim git man-db man-pages
 
 echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
