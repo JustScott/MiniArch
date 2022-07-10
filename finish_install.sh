@@ -1,3 +1,5 @@
+# Remove this script to remove clutter now that its running
+rm finish_install.sh
 
 #----------------  System User Configuration ----------------
 clear
@@ -46,6 +48,9 @@ locale-gen
 
 #----------------  Grub Configuration ----------------
 clear
+
+encrypt_system=`cat temp_var.txt`
+rm temp_var.txt
 
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
