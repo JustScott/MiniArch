@@ -45,6 +45,9 @@ mv MiniArch/finish_install.sh /mnt
 # Remove the scripts old scripts
 rm -rf MiniArch
 
+# Create a file to pass a variable to finish_install.sh
+echo $encrypt_system > temp_var.txt
+
 # Move into /mnt
 clear
 echo '\n - Type This Command: source finish_install.sh - \n'
