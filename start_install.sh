@@ -47,10 +47,9 @@ mv MiniArch/finish_install.sh /mnt
 # Create a file to pass a variable to finish_install.sh
 echo $encrypt_system > /mnt/temp_var.txt
 
-# Move into /mnt
+# Chroot into /mnt, and run the finish_install.sh script
 clear
-# echo -e '\n - Type This Command: bash finish_install.sh - \n'
-arch-chroot /mnt < finish_install.sh
+arch-chroot /mnt bash finish_install.sh
 
 # After finish_install.sh is done
 clear
