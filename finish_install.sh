@@ -1,6 +1,3 @@
-# Remove this script to remove clutter now that its running
-rm finish_install.sh
-
 #----------------  System User Configuration ----------------
 clear
 
