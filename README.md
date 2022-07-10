@@ -4,13 +4,7 @@
 <br>
 
 ```python
-$ cfdisk
-# Create 3 paritions:
-  |-> /dev/sda1 - 512M - bootable
-  |-> /dev/sda2 - 2G - swap
-  |-> /dev/sda3 - default
-
-# Connecting to a network
+# Connect to a network
 $ iwctl
 [iwd] device list # List the your computers network devices
 [iwd] station wlan0 get-networks  # List the available networks
@@ -24,9 +18,6 @@ $ git clone https://www.github.com/JustScott/MiniArch.git
 
 # Run the install script
 $ bash MiniArch/start_install.sh
-
-# After going through the prompts
-$ bash finish_install.sh
 
 ```
 
