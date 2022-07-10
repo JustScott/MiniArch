@@ -50,7 +50,7 @@ echo $encrypt_system > /mnt/temp_var.txt
 
 # Move into /mnt
 clear
-echo '\n - Type This Command: source finish_install.sh - \n'
+echo -e '\n - Type This Command: bash finish_install.sh - \n'
 arch-chroot /mnt
 
 # After finish_install.sh is done
