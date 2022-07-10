@@ -34,13 +34,13 @@ mount /dev/sda1 /mnt/boot
 #----------------  /mnt Prepping ----------------
 
 # Put the basic linux dependices on your filesystem parition, + vim,git
-$ pacstrap /mnt base linux linux-firmware
+pacstrap /mnt base linux linux-firmware
 
 # Tell the system where the partitions are when starting
-$ genfstab -U /mnt >> /mnt/etc/fstab
+genfstab -U /mnt >> /mnt/etc/fstab
 
 # Enter your filesystem
-$ arch-chroot /mnt
+arch-chroot /mnt
 
 
 #----------------  System User Configuration ----------------
