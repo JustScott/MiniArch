@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sfdisk /dev/sda < partition_table.txt
+sfdisk /dev/sda < dos_partition_table.txt
 
 clear
 
