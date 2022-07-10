@@ -44,9 +44,6 @@ genfstab -U /mnt >> /mnt/etc/fstab
 # Move our final script to /mnt
 mv MiniArch/finish_install.sh /mnt
 
-# Remove the scripts old scripts
-rm -rf MiniArch
-
 # Create a file to pass a variable to finish_install.sh
 echo $encrypt_system > /mnt/temp_var.txt
 
