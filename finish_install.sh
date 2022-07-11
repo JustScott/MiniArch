@@ -31,12 +31,6 @@ usermod -aG wheel,audio,video,storage $username
 #----------------  System Settings & Packages ----------------
 clear
 
-# Installing librewolf-bin as the default browser
-git clone https://aur.archlinux.org/librewolf-bin.git
-cd librewolf-bin
-makepkg -csi PKGBUILD
-cd ..
-
 # Install the default pacman application
 pacman -S --noconfirm gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel vim git man-db man-pages
 
@@ -75,6 +69,6 @@ systemctl enable gdm NetworkManager
 
 clear
 
-echo -e '\n Type 'exit' to finish the installation \n'
+rm finish_install.sh
 
 exit
