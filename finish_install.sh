@@ -82,8 +82,11 @@ locale-gen
 #----------------  Grub Configuration ----------------
 clear
 
-encrypt_system=`cat temp_var.txt`
-rm temp_var.txt
+uefi_enabled=`cat uefi_state.temp`
+rm uefi_state.temp
+
+encrypt_system=`cat encrypted_system.temp`
+rm encrypted_system.temp
 
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
@@ -95,7 +98,13 @@ fi
 mkinitcpio -p linux
 
 # Actual Grub Install
-grub-install /dev/sda
+if [ $uefi_enabled == True ] 
+then
+  pacman -S --noconfirm efibootmgr
+  grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
+else
+  grub-install /dev/sda
+fi
 grub-mkconfig -o /boot/grub/grub.cfg
 
 #----------------  Final Touches  ----------------
