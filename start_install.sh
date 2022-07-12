@@ -84,8 +84,8 @@ if [ $uefi_enabled == True ]
 then
   mkfs.fat -F 32 /dev/sda1
   mkdir /mnt/boot
-  mkdir /mnt/boot/efi
-  mount /dev/sda1 /mnt/boot
+  mkdir /mnt/boot/EFI
+  mount /dev/sda1 /mnt/boot/EFI
 else
   # Boot Parition
   mkfs.ext4 /dev/sda1
