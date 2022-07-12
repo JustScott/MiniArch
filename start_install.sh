@@ -35,18 +35,33 @@ ask_set_encryption() {
   done
 }
 
+check_uefi() {
+    ls /sys/firmware/efi/efivars
+    if [ $? == 0 ]
+    then
+        efi=True
+    else
+        efi=False
+    fi
+    clear
 
-
-
+    echo $efi > uefi_state.temp
+}
 
 #----------------  Create and Format Partitions ---------------- 
 
-sfdisk /dev/sda < MiniArch/dos_partition_table.txt
-
-clear
-
 ask_set_encryption
 
+pacman -Sy python --noconfirm
+
+check_uefi
+uefi_enabled=`cat uefi_state.temp`
+
+python3 create_partition_table.py
+
+sfdisk /dev/sda < MiniArch/partition_table.txt
+
+clear
 
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
@@ -65,10 +80,18 @@ fi
 mkswap /dev/sda2
 swapon /dev/sda2
 
-# Boot Parition
-mkfs.ext4 /dev/sda1
-mkdir /mnt/boot
-mount /dev/sda1 /mnt/boot
+if [ $uefi_enabled == True ]
+then
+  mkfs.fat -F 32 /dev/sda1
+  mkdir /mnt/boot
+  mkdir /mnt/boot/efi
+  mount /dev/sda1 /mnt/boot
+else
+  # Boot Parition
+  mkfs.ext4 /dev/sda1
+  mkdir /mnt/boot
+  mount /dev/sda1 /mnt/boot
+fi
 
 
 #----------------  /mnt Prepping ----------------
@@ -82,8 +105,9 @@ genfstab -U /mnt >> /mnt/etc/fstab
 # Move our final script to /mnt
 mv MiniArch/finish_install.sh /mnt
 
-# Create a file to pass a variable to finish_install.sh
-echo $encrypt_system > /mnt/temp_var.txt
+# Create files to pass variables to finish_install.sh
+echo $encrypt_system > /mnt/encrypted_system.temp
+echo $uefi_enabled > /mnt/uefi_state.temp
 
 # Chroot into /mnt, and run the finish_install.sh script
 clear
