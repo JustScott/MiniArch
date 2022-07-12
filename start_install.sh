@@ -97,7 +97,7 @@ fi
 #----------------  /mnt Prepping ----------------
 
 # Put the basic linux dependices on your filesystem parition, + vim,git
-pacstrap /mnt base linux linux-firmware
+pacstrap /mnt base linux linux-firmware gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel vim man-db man-pages
 
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab
