@@ -2,7 +2,7 @@
 
 #----------------  Defining Functions ----------------
 
-encrypt_system() {
+encrypt_partition() {
   clear
   while :
     do
@@ -66,7 +66,7 @@ ask_set_encryption
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
   # Encrypt Filesystem Partition
-  encrypt_system
+  encrypt_partition
   cryptsetup open /dev/sda3 cryptdisk
   mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
