@@ -1,5 +1,28 @@
 #----------------  Defining Functions ----------------
 
+set_username() {
+  echo -e ' - Set Your Username - '
+  while : 
+  do
+    echo -n 'Enter Username: '
+    read username
+    echo -n 'Verify Username: '
+    read username_verify
+
+    if [ $username == $username_verify ]
+    then
+      clear
+      useradd -m $username
+      echo -e " - Username Set as '$username' - \n"
+      sleep 2
+      break
+    else
+      clear
+      echo -e " - Usernames Don't Match - \n"
+    fi
+  done
+}
+
 set_user_password() {
   echo -e "\n - Set Password for '$1' - "
   while :
@@ -36,11 +59,7 @@ echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name
 #----------------  User Configuration ----------------
 clear
 
-echo ' - Create A User - '
-echo -n 'Enter Username: '
-read username
-
-useradd -m $username
+set_username
 set_user_password $username
 usermod -aG wheel,audio,video,storage $username
 
