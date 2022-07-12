@@ -99,10 +99,10 @@ then
   mkinitcpio -p linux
 
 # Actual Grub Install
-if [ $uefi_enabled == True ] 
+if [ $uefi_enabled == True ]
 then
-  pacman -S --noconfirm efibootmgr
-  grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
+  pacman -S --noconfirm efibootmgr dosfstools os-prober mtools
+  grub-install --target=x86_64-efi --bootloader-id=GRUB --recheck
 else
   grub-install /dev/sda
 fi
