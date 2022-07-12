@@ -42,3 +42,4 @@ else:
 
 with open('root/MiniArch/partition_table.txt', 'w')as f:
     f.write(table)
+    
