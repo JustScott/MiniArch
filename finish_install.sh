@@ -40,7 +40,7 @@ set_user_password() {
 #----------------  System User Configuration ----------------
 clear
 
-echo -n 'Enter System Name: '
+echo ' - Set System Name - '
 set_username
 system_name = $username
 
