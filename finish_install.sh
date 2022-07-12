@@ -93,6 +93,10 @@ then
 fi
 
 mkinitcpio -p linux
+if [ $? != 0 ]
+then
+  pacman -S --noconfirm linux
+  mkinitcpio -p linux
 
 # Actual Grub Install
 if [ $uefi_enabled == True ] 
