@@ -12,9 +12,9 @@ for label in disk_labels:
         break
 
 with open('uefi_state.temp', 'r')as f:
-    uefi = bool(f.read().strip())
+    uefi = f.read().strip()
 
-if uefi:
+if uefi == 'True':
     table = f'''
 label: gpt
 device: /dev/{disk_label}
@@ -27,7 +27,7 @@ sector-size: 512
 /dev/{disk_numbering}3 : start=     5244928, size=  , type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-else:
+if uefi == 'False':
     table = f'''
 label: dos
 device: /dev/{disk_label}
