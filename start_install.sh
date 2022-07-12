@@ -50,8 +50,6 @@ check_uefi() {
 
 #----------------  Create and Format Partitions ---------------- 
 
-ask_set_encryption
-
 pacman -Sy python --noconfirm
 
 check_uefi
@@ -62,6 +60,8 @@ python3 create_partition_table.py
 sfdisk /dev/sda < MiniArch/partition_table.txt
 
 clear
+
+ask_set_encryption
 
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
