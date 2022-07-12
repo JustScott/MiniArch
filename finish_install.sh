@@ -1,3 +1,21 @@
+#----------------  Defining Functions ----------------
+
+set_user_password() {
+  echo -e "\nSet Password for '$1'"
+  while :
+    do
+      passwd $1
+      if [ $? == 0 ]
+      then
+        break
+      else
+        clear
+        echo -e " - Passwords Don't Match - \n"
+      fi
+   done
+}
+
+
 #----------------  System User Configuration ----------------
 clear
 
@@ -9,7 +27,7 @@ clear
 
 # Set the root password
 echo '- Set root password -'
-passwd
+set_user_password root
 
 echo $system_name > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name >> /etc/hosts
@@ -21,10 +39,9 @@ clear
 echo ' - Create A User - '
 echo -n 'Enter Username: '
 read username
-echo Username set as $username
 
 useradd -m $username
-passwd $username
+set_user_password $username
 usermod -aG wheel,audio,video,storage $username
 
 
