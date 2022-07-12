@@ -1,19 +1,57 @@
 #!/bin/bash
 
+#----------------  Defining Functions ----------------
+
+encrypt_system() {
+  clear
+  while :
+    do
+      cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
+      if [ $? == 0 ]
+      then
+        break
+      else
+        clear
+        echo -e " - Try Again - \n"
+      fi
+   done
+}
+
+ask_set_encryption() {
+  while : 
+  do
+    echo -n 'Use An Encrypted System? [y/n]: '
+    read encrypt_system
+    echo -n 'Are you sure? [y/n]: '
+    read verify_encrypt
+
+    if [ $encrypt_system == $verify_encrypt ]
+    then
+      break
+    else
+      clear
+      echo -e " - Answers Don't Match - \n"
+    fi
+  done
+}
+
+
+
+
+
+#----------------  Create and Format Partitions ---------------- 
+
 sfdisk /dev/sda < MiniArch/dos_partition_table.txt
 
 clear
 
-echo -n 'Using Encrypted System?[y/n](default:n): '
-read encrypt_system
+ask_set_encryption
 
 
-#----------------  Parition Formatting ---------------- 
-  
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
-  # Encrypted Filesystem Partition
-  cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
+  # Encrypt Filesystem Partition
+  encrypt_system
   cryptsetup open /dev/sda3 cryptdisk
   mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
