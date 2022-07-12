@@ -59,6 +59,7 @@ clear
 echo -e ' - Set Your Username - '
 set_username
 useradd -m $username
+clear
 set_user_password $username
 usermod -aG wheel,audio,video,storage $username
 
