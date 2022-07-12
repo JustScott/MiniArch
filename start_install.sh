@@ -57,7 +57,7 @@ uefi_enabled=`cat uefi_state.temp`
 
 python3 create_partition_table.py
 
-sfdisk /dev/sda < MiniArch/partition_table.txt
+sfdisk /dev/sda < partition_table.txt
 
 clear
 
