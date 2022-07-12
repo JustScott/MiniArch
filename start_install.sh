@@ -55,7 +55,7 @@ pacman -Sy python --noconfirm
 check_uefi
 uefi_enabled=`cat uefi_state.temp`
 
-python3 create_partition_table.py
+python3 MiniArch/create_partition_table.py
 
 sfdisk /dev/sda < partition_table.txt
 
