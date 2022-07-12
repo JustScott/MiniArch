@@ -1,7 +1,7 @@
 #----------------  Defining Functions ----------------
 
 set_user_password() {
-  echo -e "\nSet Password for '$1'"
+  echo -e "\n - Set Password for '$1' - "
   while :
     do
       passwd $1
