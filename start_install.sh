@@ -123,8 +123,9 @@ clear
 arch-chroot /mnt bash finish_install.sh
 
 # After finish_install.sh is done
-clear
 umount -a
+clear
+
 echo -e '\n - Remove the installation media before starting the system again - \n'
 echo 'Shutting down in 10 seconds...'
 sleep 10
