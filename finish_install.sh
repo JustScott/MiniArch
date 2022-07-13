@@ -92,11 +92,8 @@ then
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
+pacman -S --noconfirm linux
 mkinitcpio -p linux
-if [ $? != 0 ]
-then
-  pacman -S --noconfirm linux
-  mkinitcpio -p linux
 
 # Actual Grub Install
 if [ $uefi_enabled == True ]
