@@ -102,7 +102,7 @@ then
 if [ $uefi_enabled == True ]
 then
   pacman -S --noconfirm efibootmgr dosfstools os-prober mtools
-  grub-install --target=x86_64-efi --bootloader-id=GRUB --recheck
+  grub-install --efi-directory=/boot
 else
   grub-install /dev/sda
 fi
