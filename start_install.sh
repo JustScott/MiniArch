@@ -80,14 +80,13 @@ fi
 mkswap /dev/sda2
 swapon /dev/sda2
 
+# Boot Parition
 if [ $uefi_enabled == True ]
 then
   mkfs.fat -F 32 /dev/sda1
   mkdir /mnt/boot
-  mkdir /mnt/boot/EFI
-  mount /dev/sda1 /mnt/boot/EFI
+  mount /dev/sda1 /mnt/boot
 else
-  # Boot Parition
   mkfs.ext4 /dev/sda1
   mkdir /mnt/boot
   mount /dev/sda1 /mnt/boot
