@@ -98,7 +98,7 @@ fi
 # Install basic kernel, filesystem and gnome packages
 while :
 do
-  pacstrap /mnt base linux linux-firmware gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel vim man-db man-pages
+  pacstrap /mnt base linux linux-firmware gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel git vim man-db man-pages
   if [ $? == 0 ]
   then
     break
