@@ -91,13 +91,19 @@ clear
 uefi_enabled=`cat uefi_state.temp`
 rm uefi_state.temp
 
+disk_label=`cat disk_label.temp`
+rm disk_label.temp
+
+disk_number=`cat disk_number.temp`
+rm disk_number.temp
+
 encrypt_system=`cat encrypted_system.temp`
 rm encrypted_system.temp
 
 if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
 then
   # Encryption configuration
-  echo -e '\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/sda2:cryptdisk"' >> /etc/default/grub
+  echo -e ""\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/${disk_number}2:cryptdisk""" >> /etc/default/grub
   echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFUALT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
@@ -112,7 +118,7 @@ then
   pacman -S --noconfirm efibootmgr dosfstools mtools
   grub-install --efi-directory=/boot
 else
-  grub-install /dev/sda
+  grub-install /dev/${disk_label}
 fi
 grub-mkconfig -o /boot/grub/grub.cfg
 
