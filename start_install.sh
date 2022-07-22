@@ -72,7 +72,7 @@ then
   mount /dev/mapper/cryptdisk /mnt
 else
   # Unencrypted Filesystem Partition
-  mkfs.ext4 /dev/sda3
+  mkfs.ext4 /dev/sda2
   mount /dev/sda3 /mnt
 fi
 
