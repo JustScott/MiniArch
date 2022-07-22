@@ -6,7 +6,7 @@ encrypt_partition() {
   clear
   while :
     do
-      cryptsetup luksFormat -s 512 -h sha512 /dev/sda3
+      cryptsetup luksFormat -s 512 -h sha512 /dev/sda2
       if [ $? == 0 ]
       then
         break
