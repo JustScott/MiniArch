@@ -92,7 +92,6 @@ fi
 #----------------  /mnt Prepping ----------------
 
 # Install basic kernel, filesystem and gnome packages
-pacman -Sc --noconfirm
 pacstrap /mnt base linux linux-firmware linux-lts os-prober gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel git vim man-db man-pages
 
 # Tell the system where the partitions are when starting
