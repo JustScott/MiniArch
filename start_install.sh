@@ -6,7 +6,7 @@ encrypt_partition() {
   clear
   while :
     do
-      cryptsetup luksFormat -s 512 -h sha512 /dev/sda2
+      cryptsetup luksFormat -s 512 -h sha512 /dev/${disk_number}2
       if [ $? == 0 ]
       then
         break
@@ -57,7 +57,10 @@ uefi_enabled=`cat uefi_state.temp`
 
 python3 MiniArch/create_partition_table.py
 
-sfdisk /dev/sda < partition_table.txt
+sfdisk /dev/${disk_number} < partition_table.txt
+
+disk_label=`cat disk_label.temp`
+disk_number=`cat disk_number.temp`
 
 clear
 
@@ -67,23 +70,23 @@ if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='y
 then
   # Encrypt Filesystem Partition
   encrypt_partition
-  cryptsetup open /dev/sda2 cryptdisk
+  cryptsetup open /dev/${disk_number}2 cryptdisk
   mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
 else
   # Unencrypted Filesystem Partition
-  mkfs.ext4 /dev/sda2
-  mount /dev/sda3 /mnt
+  mkfs.ext4 /dev/${disk_number}2
+  mount /dev/${disk_number}2 /mnt
 fi
 
 # Boot Parition
 if [ $uefi_enabled == True ]
 then
-  mkfs.fat -F 32 /dev/sda1
+  mkfs.fat -F 32 /dev/${disk_number}1
   mkdir /mnt/boot
   mount /dev/sda1 /mnt/boot
 else
-  mkfs.ext4 /dev/sda1
+  mkfs.ext4 /dev/${disk_number}1
   mkdir /mnt/boot
   mount /dev/sda1 /mnt/boot
 fi
@@ -104,6 +107,8 @@ mv MiniArch/finish_install.sh /mnt
 # Create files to pass variables to finish_install.sh
 echo $encrypt_system > /mnt/encrypted_system.temp
 echo $uefi_enabled > /mnt/uefi_state.temp
+echo $disk_label > /mnt/disk_label.temp
+echo $uefi_number > /mnt/disk_number.temp
 
 # Chroot into /mnt, and run the finish_install.sh script
 clear
