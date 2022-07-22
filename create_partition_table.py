@@ -11,6 +11,11 @@ for label in disk_labels:
             disk_numbering = 'nvme0n1p'
         break
 
+with open('disk_label.temp', 'w')as f:
+    f.write(disk_label)
+with open('disk_number.temp', 'w')as f:
+    f.write(disk_numbering)
+        
 with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
 
