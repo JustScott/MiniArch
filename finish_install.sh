@@ -76,6 +76,15 @@ export LANG=en_US.UTF-8
 locale-gen
 
 
+#----------------  Swap File Configuration ----------------
+
+# Creating the swapfile / swap space
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+echo -e '\n\n/swapfile none swap 0 0' >> /etc/fstab
+
+
 #----------------  Grub Configuration ----------------
 clear
 
@@ -113,12 +122,6 @@ grub-mkconfig -o /boot/grub/grub.cfg
 systemctl enable gdm NetworkManager
 
 clear
-
-# Creating the swapfile / swap space
-fallocate -l 2G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-echo -e '\n\n/swapfile none swap 0 0' >> /etc/fstab
 
 rm finish_install.sh
 
