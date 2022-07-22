@@ -89,16 +89,18 @@ if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='y
 then
   # Encryption configuration
   echo -e '\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX="cryptdevice=/dev/sda3:cryptdisk"' >> /etc/default/grub
+  echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFUALT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
-pacman -S --noconfirm linux
+pacman -S --noconfirm linux linux-lts
 mkinitcpio -p linux
+mkinitcpio -P
 
 # Actual Grub Install
 if [ $uefi_enabled == True ]
 then
-  pacman -S --noconfirm efibootmgr dosfstools os-prober mtools
+  pacman -S --noconfirm efibootmgr dosfstools mtools
   grub-install --efi-directory=/boot
 else
   grub-install /dev/sda
@@ -111,6 +113,12 @@ grub-mkconfig -o /boot/grub/grub.cfg
 systemctl enable gdm NetworkManager
 
 clear
+
+# Creating the swapfile / swap space
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+echo -e '\n\n/swapfile none swap 0 0' >> /etc/fstab
 
 rm finish_install.sh
 
