@@ -82,7 +82,7 @@ locale-gen
 fallocate -l 2G /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
-echo -e '\n\n/swapfile none swap 0 0' >> /etc/fstab
+echo -e '\n/swapfile none swap 0 0' >> /etc/fstab
 
 
 #----------------  Grub Configuration ----------------
