@@ -67,7 +67,7 @@ if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='y
 then
   # Encrypt Filesystem Partition
   encrypt_partition
-  cryptsetup open /dev/sda3 cryptdisk
+  cryptsetup open /dev/sda2 cryptdisk
   mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
 else
