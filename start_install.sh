@@ -84,11 +84,11 @@ if [ $uefi_enabled == True ]
 then
   mkfs.fat -F 32 /dev/${disk_number}1
   mkdir /mnt/boot
-  mount /dev/sda1 /mnt/boot
+  mount /dev/${disk_number}1 /mnt/boot
 else
   mkfs.ext4 /dev/${disk_number}1
   mkdir /mnt/boot
-  mount /dev/sda1 /mnt/boot
+  mount /dev/${disk_number}1 /mnt/boot
 fi
 
 
