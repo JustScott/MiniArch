@@ -66,7 +66,7 @@ clear
 
 ask_set_encryption
 
-if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
+if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encrypt Filesystem Partition
   encrypt_partition

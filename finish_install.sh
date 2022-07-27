@@ -100,7 +100,7 @@ rm disk_number.temp
 encrypt_system=`cat encrypted_system.temp`
 rm encrypted_system.temp
 
-if [ $encrypt_system=='y' ] || [ $encrypt_system=='Y' ] || [ $encrypt_system=='yes' ]
+if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encryption configuration
   echo -e "\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX='cryptdevice=/dev/${disk_number}2:cryptdisk'" >> /etc/default/grub
