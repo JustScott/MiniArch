@@ -57,10 +57,10 @@ uefi_enabled=`cat uefi_state.temp`
 
 python3 MiniArch/create_partition_table.py
 
-sfdisk /dev/${disk_number} < partition_table.txt
-
 disk_label=`cat disk_label.temp`
 disk_number=`cat disk_number.temp`
+
+sfdisk /dev/${disk_label} < partition_table.txt
 
 clear
 
