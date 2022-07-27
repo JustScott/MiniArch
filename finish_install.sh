@@ -104,9 +104,10 @@ if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system
 then
   # Encryption configuration
   echo -e "\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX='cryptdevice=/dev/${disk_number}2:cryptdisk'" >> /etc/default/grub
-  echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFUALT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
+
+echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFUALT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
 
 pacman -S --noconfirm linux linux-lts
 mkinitcpio -p linux
