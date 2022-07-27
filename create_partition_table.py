@@ -1,26 +1,48 @@
 import os
 
-disk_labels = ['sda','hda','vda','nvme0n1']
+def get_disk_name():
+	## Filter the return of the lsblk command
+	lsblk_output = os.popen('lsblk').read()
+	rows = lsblk_output.split('\n')[1:]
+	disks = [row.split(' ')[0] for row in rows]
+	disks = list(filter(None, disks))
 
-lsblk_output = os.popen('lsblk').read()
-for label in disk_labels:
-    if label in lsblk_output:
-        disk_label = label
-        disk_numbering = label
-        if disk_label == 'nvme0n1':
-            disk_numbering = 'nvme0n1p'
-        break
+	## Ask the User which disk to write over
+	os.system('clear')
+	while True:
+		print(' - Disk Choices - \n')
+		for disk in disks:
+			print(disk)
+
+		disk_label = input('\nType the name of the disk to install Arch on: ')
+		
+		if disk_label in disks:
+			break
+		else:
+			os.system('clear')
+			print("\n * Error: That disk isn't in the list! * \n")
+
+	if disk_label == 'nvme0n1':
+		disk_numbering = 'nvme0n1p'
+	else:
+		disk_numbering = disk_label
+
+	return disk_label, disk_numbering
+
+
+disk_label, disk_numbering = get_disk_name()
+
 
 with open('disk_label.temp', 'w')as f:
-    f.write(disk_label)
+	f.write(disk_label)
 with open('disk_number.temp', 'w')as f:
-    f.write(disk_numbering)
-        
+	f.write(disk_numbering)
+			
 with open('uefi_state.temp', 'r')as f:
-    uefi = f.read().strip()
+	uefi = f.read().strip()
 
 if uefi == 'True':
-    table = f'''
+	table = f'''
 label: gpt
 device: /dev/{disk_label}
 unit: sectors
@@ -45,4 +67,4 @@ sector-size: 512
 
 with open('partition_table.txt', 'w')as f:
     f.write(table)
-    
+
