@@ -1,6 +1,6 @@
 import os
 
-disk_labels = ['sda','nvme0n1','hda']
+disk_labels = ['sda','hda','vda','nvme0n1']
 
 lsblk_output = os.popen('lsblk').read()
 for label in disk_labels:
