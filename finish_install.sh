@@ -89,16 +89,12 @@ echo '/swapfile none swap 0 0' >> /etc/fstab
 clear
 
 uefi_enabled=`cat uefi_state.temp`
-rm uefi_state.temp
 
 disk_label=`cat disk_label.temp`
-rm disk_label.temp
 
 disk_number=`cat disk_number.temp`
-rm disk_number.temp
 
 encrypt_system=`cat encrypted_system.temp`
-rm encrypted_system.temp
 
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
@@ -130,6 +126,7 @@ systemctl enable gdm NetworkManager bluetooth
 
 clear
 
+rm encrypted_system.temp
 rm uefi_state.temp
 rm disk_label.temp
 rm disk_number.temp

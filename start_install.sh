@@ -105,8 +105,8 @@ mv MiniArch/finish_install.sh /mnt
 # Create files to pass variables to finish_install.sh
 echo $encrypt_system > /mnt/encrypted_system.temp
 mv uefi_state.temp /mnt
-mv disk_label.temp > /mnt
-mv disk_number.temp > /mnt
+mv disk_label.temp /mnt
+mv disk_number.temp /mnt
 
 # Chroot into /mnt, and run the finish_install.sh script
 clear
