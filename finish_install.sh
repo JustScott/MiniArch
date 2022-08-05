@@ -130,6 +130,9 @@ systemctl enable gdm NetworkManager bluetooth
 
 clear
 
+rm uefi_state.temp
+rm disk_label.temp
+rm disk_number.temp
 rm finish_install.sh
 
 exit
