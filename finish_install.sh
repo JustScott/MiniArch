@@ -67,7 +67,9 @@ usermod -aG wheel,audio,video,storage $username
 #----------------  System Settings & Packages ----------------
 clear
 
+chmod u+w /etc/sudoers
 echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
+chmod u-w /etc/sudoers
 
 # Set the keyboard orientation
 echo en_US.UTF-8 UTF-8 >> /etc/locale.gen

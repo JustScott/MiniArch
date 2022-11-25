@@ -43,11 +43,11 @@ with open('disk_label.temp', 'w')as f:
 with open('disk_number.temp', 'w')as f:
     f.write(disk_numbering)
             
+uefi = 'True'
+
 ## Different table types are needed for uefi and none-uefi systems
 with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
-
-uefi = 'True'
 
 if uefi == 'True':
     table = f'''
