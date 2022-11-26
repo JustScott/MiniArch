@@ -43,7 +43,7 @@ with open('disk_label.temp', 'w')as f:
 with open('disk_number.temp', 'w')as f:
     f.write(disk_numbering)
             
-uefi = 'True'
+uefi = None
 
 ## Different table types are needed for uefi and none-uefi systems
 with open('uefi_state.temp', 'r')as f:
@@ -61,7 +61,7 @@ sector-size: 512
 /dev/{disk_numbering}2 : start=     1050624, size=  , type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-if uefi == 'False':
+elif uefi == 'False':
     table = f'''
 label: dos
 device: /dev/{disk_label}
@@ -71,6 +71,7 @@ sector-size: 512
 /dev/{disk_numbering}1 : start=        2048, size=     1048576, type=83, bootable
 /dev/{disk_numbering}2 : start=     1050624, size=     , type=83
 '''
+
 
 with open('partition_table.txt', 'w')as f:
     f.write(table)
