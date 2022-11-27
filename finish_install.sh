@@ -105,7 +105,7 @@ then
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
-echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFUALT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
+echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
 
 pacman -S --noconfirm linux linux-lts
 mkinitcpio -p linux
