@@ -5,11 +5,15 @@
 
 ```python
 # Connect to a network
-$ iwctl
-[iwd] device list # List the your computers network devices
-[iwd] station wlan0 get-networks  # List the available networks
-[iwd] station wlan0 connect <ssid>  # Connect to your network
-[iwd] exit
+$ wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
+$ wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
+
+(
+  You can find your Wifi Adapter name
+  via the "ip address" command, 
+  probably named "wlan0" or something
+  close to that 
+ )
 
 pacman -Sy git
 
