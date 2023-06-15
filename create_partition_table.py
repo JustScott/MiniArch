@@ -1,44 +1,128 @@
 import os
+from copy import deepcopy
 
-def get_disk_name():
+
+TERABYTE_IN_BYTES = 1099511627776
+GIGABYTE_IN_BYTES = 1073741824
+MEGABYTE_IN_BYTES = 1048576
+SECTOR_SIZE = 512
+# Converts gigabytes to sectors
+terabytes_to_sectors = lambda terabytes: int((terabytes * TERABYTE_IN_BYTES) / SECTOR_SIZE) 
+gigabytes_to_sectors = lambda gigabytes: int((gigabytes * GIGABYTE_IN_BYTES) / SECTOR_SIZE)
+megabytes_to_sectors = lambda megabytes: int((megabytes * MEGABYTE_IN_BYTES) / SECTOR_SIZE) 
+
+
+sectors_to_terabytes = lambda sectors: int((sectors * SECTOR_SIZE) / TERABYTE_IN_BYTES) 
+sectors_to_gigabytes = lambda sectors: int((sectors * SECTOR_SIZE) / GIGABYTE_IN_BYTES)
+sectors_to_megabytes = lambda sectors: int((sectors * SECTOR_SIZE) / MEGABYTE_IN_BYTES) 
+
+
+def get_remaining_disk_space():
+    '''
+    Returns each disk, along with its remaining free space
+    '''
     ## Filter the return of the lsblk command
     lsblk_output = os.popen('lsblk').read()
     rows = lsblk_output.split('\n')[1:]
-    disk_data = [list(filter(None,row.split(' '))) for row in rows]
-    disks = [row for row in disk_data if 'disk' in row]
-    disk_labels = [row[0] for row in disks]
-    disk_sizes = [row[3] for row in disks]
+    block_data = [list(filter(None,row.split(' '))) for row in rows]
+    
+    def convert_size_to_sector(size: str) -> int:
+        size = size.lower()
 
-    format_max_size = max(map(len,disk_labels))
+        if 'm' in size:
+            size = size.replace('m', '')
+            if '.' in size:
+                size = float(size)
+            return megabytes_to_sectors(int(size))
+        elif 'g' in size:
+            size = size.replace('g', '')
+            if '.' in size:
+                size = float(size)
+            return gigabytes_to_sectors(int(size))
+        elif 't' in size:
+            size = size.replace('t', '')
+            if '.' in size:
+                size = float(size)
+            return terabytes_to_sectors(int(size))
+
+    def disk_labels_sizes():
+        disks = [row for row in block_data if 'disk' in row]
+        return {row[0]:convert_size_to_sector(row[3]) for row in disks}
+
+    def partition_labels_sizes():
+        partitions = [row for row in block_data if 'part' in row]
+        return {
+            row[0].replace('├─','').replace('└─', ''):convert_size_to_sector(row[3]) 
+            for row in partitions
+        }
+
+
+    disk_labels_sizes_dict = disk_labels_sizes()
+    partition_labels_sizes_dict = partition_labels_sizes()
+
+
+    for disk_label,disk_size in disk_labels_sizes_dict.items():
+        for partition_label,partition_size in partition_labels_sizes_dict.items():
+            if disk_label in partition_label:
+                disk_labels_sizes_dict[disk_label] = (
+                    disk_labels_sizes_dict[disk_label]-partition_size
+                )
+                if disk_labels_sizes_dict[disk_label] < 0:
+                    disk_labels_sizes_dict[disk_label] = 0
+
+        size_in_megabytes = sectors_to_megabytes(disk_labels_sizes_dict[disk_label])
+        size_in_gigabytes = sectors_to_gigabytes(disk_labels_sizes_dict[disk_label])
+        size_in_terabytes = sectors_to_terabytes(disk_labels_sizes_dict[disk_label])
+
+        if size_in_megabytes < 1000:
+           disk_labels_sizes_dict[disk_label] = f'{size_in_megabytes}M'
+        elif size_in_gigabytes < 1000:
+            disk_labels_sizes_dict[disk_label] = f'{size_in_gigabytes}G'
+        elif size_in_terabytes < 1000:
+            disk_labels_sizes_dict[disk_label] = f'{size_in_terabytes}T'
+
+
+    return disk_labels_sizes_dict
+
+
+def get_disk_name(disk_labels_sizes_dict: dict):
+    format_max_size = max(map(len,disk_labels_sizes_dict.keys()))
 
     ## Ask the User which disk to write over
     os.system('clear')
     while True:
-        print(f'\n  Name  |  Size\n')
+        print(f'\n  Name  |  Free Space\n')
 
-        for disk,size in zip(disk_labels, disk_sizes):
+        new_disk_labels_sizes_dict = deepcopy(disk_labels_sizes_dict)
+        for disk,size in disk_labels_sizes_dict.items():
+            # Require a size above 5 gigabytes before displaying
+            #  the disk as an option
+            if 'm' in size.lower():
+                del new_disk_labels_sizes_dict[disk]
+                continue
+            elif 'g' in size.lower():
+                if int(size.lower().replace('g','')) < 5:
+                    del new_disk_labels_sizes_dict[disk]
+                    continue
             spacing = (format_max_size - len(disk)) + 3
             spacing *= " "
             print(f' {disk}{spacing}{size}')
 
         disk_label = input('\nType the name of the disk to install Arch on: ')
-    
-        if disk_label in disk_labels:
-            if 'g' not in disk_sizes[disk_labels.index(disk_label)].lower():
-                os.system('clear')
-                print(f"\n * {disk_label} isn't large enough * \n")
-                continue
-            break
-        else:
+   
+        disk_labels_sizes_dict = deepcopy(new_disk_labels_sizes_dict)
+        if disk_label not in disk_labels_sizes_dict:
             os.system('clear')
             print("\n * Error: That disk isn't in the list! * \n")
+            continue
+        break
 
     if disk_label == 'nvme0n1':
         disk_numbering = 'nvme0n1p'
     else:
         disk_numbering = disk_label
 
-    disk_size = disk_sizes[disk_labels.index(disk_label)]
+    disk_size = disk_labels_sizes_dict[disk_label]
 
     return disk_label, disk_numbering, disk_size
 
@@ -56,10 +140,6 @@ def get_partition_size(disk_size:str) -> int:
         int:
             Requested size of the partition in sectors
     '''
-    gigabyte_in_bytes = 1024*1024*1024
-    default_sector_size = 512
-
-    convert_gigabytes_to_sectors = lambda gigabytes,sector_size: int((gigabytes * gigabyte_in_bytes) / sector_size)
 
     # Convert disk_size to integer
     if disk_size.isdigit():
@@ -79,11 +159,15 @@ def get_partition_size(disk_size:str) -> int:
         if not partition_size_in_gigabytes:
             return ''
         if partition_size_in_gigabytes.isdigit():
-            if int(partition_size_in_gigabytes) < int_disk_size:
+            if (
+                int(partition_size_in_gigabytes) < int_disk_size
+                and int(partition_size_in_gigabytes) > 5
+            ):
                 partition_size_in_gigabytes = int(partition_size_in_gigabytes)
-                return convert_gigabytes_to_sectors(partition_size_in_gigabytes, default_sector_size)
+                return gigabytes_to_sectors(partition_size_in_gigabytes)
             else:
-                print(f'\n** Must be an integer smaller than {int_disk_size} **')
+                print(f'\n** Must be an integer smaller than {int_disk_size}, and larger than 5 gigabytes **')
+
 
         else:
             print('\n** Must be an integer, no characters or decimals! **')
@@ -91,7 +175,7 @@ def get_partition_size(disk_size:str) -> int:
 
 
 ## Writes the label and numbering to files for further use in the bash scripts
-disk_label, disk_numbering, disk_size = get_disk_name()
+disk_label, disk_numbering, disk_size = get_disk_name(get_remaining_disk_space())
 with open('disk_label.temp', 'w')as f:
     f.write(disk_label)
 with open('disk_number.temp', 'w')as f:
