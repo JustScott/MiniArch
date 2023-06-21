@@ -1,6 +1,10 @@
 #----------------  Defining Functions ----------------
 
 set_username() {
+  #
+  # Doesn't actually set the username, just returns it in
+  #  the variable '$username'
+  #
   while : 
   do
     echo -n 'Enter Username: '
@@ -40,17 +44,19 @@ set_user_password() {
 #----------------  System User Configuration ----------------
 clear
 
+# Use the 'set_username' function to get the system name
 echo ' - Set System Name - '
 set_username
-system_name = $username
+system_name="$username"
+
+echo "$system_name" > /etc/hostname
+echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
+hostnamectl set-hostname "$system_name"
 
 clear
 
 # Set the root password
 set_user_password root
-
-echo $system_name > /etc/hostname
-echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '$system_name >> /etc/hosts
 
 
 #----------------  User Configuration ----------------
@@ -58,10 +64,10 @@ clear
 
 echo -e ' - Set Your Username - '
 set_username
-useradd -m $username
+useradd -m "$username"
 clear
-set_user_password $username
-usermod -aG wheel,audio,video,storage $username
+set_user_password "$username"
+usermod -aG wheel,audio,video,storage "$username"
 
 
 #----------------  System Settings & Packages ----------------
@@ -108,8 +114,7 @@ fi
 echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
 
 pacman -S --noconfirm linux linux-lts
-mkinitcpio -p linux
-mkinitcpio -P
+mkinitcpio --allpresets
 
 # Actual Grub Install
 if [ $uefi_enabled == True ]
