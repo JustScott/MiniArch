@@ -18,6 +18,9 @@ sectors_to_terabytes = lambda sectors: int((sectors * SECTOR_SIZE) / TERABYTE_IN
 sectors_to_gigabytes = lambda sectors: int((sectors * SECTOR_SIZE) / GIGABYTE_IN_BYTES)
 sectors_to_megabytes = lambda sectors: int((sectors * SECTOR_SIZE) / MEGABYTE_IN_BYTES) 
 
+# Minimum size in Gigabytes for the root partition
+MIN_PARTITION_SIZE = 8
+
 def convert_size_to_sector(disk_size: str) -> int:
     '''
     Converts the size of a disk from megabytes, gigabytes, or terabytes, to
@@ -173,6 +176,8 @@ def get_disk_name(disk_labels_sizes_dict: dict) -> (str,str,str):
     while True:
         print(f'\n  Name  |  Free Space\n')
 
+        suitable_disk_option = False
+
         new_disk_labels_sizes_dict = deepcopy(disk_labels_sizes_dict)
         for disk,size in disk_labels_sizes_dict.items():
             # Require a size above 5 gigabytes before displaying
@@ -181,12 +186,21 @@ def get_disk_name(disk_labels_sizes_dict: dict) -> (str,str,str):
                 del new_disk_labels_sizes_dict[disk]
                 continue
             elif 'g' in size.lower():
-                if int(size.lower().replace('g','')) < 5:
+                if int(size.lower().replace('g','')) < MIN_PARTITION_SIZE:
                     del new_disk_labels_sizes_dict[disk]
                     continue
+
+            suitable_disk_option = True
+
             spacing = (format_max_size - len(disk)) + 3
             spacing *= " "
             print(f' {disk}{spacing}{size}')
+
+        # If none of the disks are large enough for installation
+        if not suitable_disk_option:
+            print('\nNone of the disks have enough free space for installation')
+            print('Please make space before attempting to install again...\n')
+            quit(1)
 
         disk_label = input('\nType the name of the disk to install Arch on: ')
    
@@ -225,18 +239,18 @@ def get_partition_size(disk_size:str) -> int:
     disk_size = sectors_to_gigabytes(sectors)
 
     while True:
-        partition_size_in_gigabytes = input("Root partition size in Gigabytes (leave blank to fill disk): ")
+        partition_size_in_gigabytes = input("Root partition size in Gigabytes (leave blank to fill remaining disk space): ")
         if not partition_size_in_gigabytes:
             return '' # Fills remaining disk free space
         if partition_size_in_gigabytes.isdigit():
             if (
                 int(partition_size_in_gigabytes) < disk_size
-                and int(partition_size_in_gigabytes) > 5
+                and int(partition_size_in_gigabytes) >= MIN_PARTITION_SIZE
             ):
                 partition_size_in_gigabytes = int(partition_size_in_gigabytes)
                 return gigabytes_to_sectors(partition_size_in_gigabytes)
             else:
-                print(f'\n** Must be an integer smaller than {disk_size}, and larger than 5 gigabytes **')
+                print(f'\n**Must be an integer less than {disk_size} Gigabytes, and greater than {MIN_PARTITION_SIZE-1} Gigabytes.**')
 
 
         else:
