@@ -86,11 +86,11 @@ fi
 if [ $uefi_enabled == True ]
 then
   mkfs.fat -F 32 /dev/${disk_number}1
-  mkdir /mnt/boot
+  mkdir -p /mnt/boot
   mount /dev/${disk_number}1 /mnt/boot
 else
   mkfs.ext4 /dev/${disk_number}1
-  mkdir /mnt/boot
+  mkdir -p /mnt/boot
   mount /dev/${disk_number}1 /mnt/boot
 fi
 
@@ -113,8 +113,8 @@ mv uefi_state.temp /mnt
 mv disk_label.temp /mnt
 mv disk_number.temp /mnt
 
-# Chroot into /mnt, and run the finish_install.sh script
 clear
+# Chroot into /mnt, and run the finish_install.sh script
 arch-chroot /mnt bash finish_install.sh
 
 # After finish_install.sh is done

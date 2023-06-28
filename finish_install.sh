@@ -74,7 +74,7 @@ usermod -aG wheel,audio,video,storage "$username"
 clear
 
 chmod u+w /etc/sudoers
-echo -e '\n##Appended to file via install script (MiniArch)\n%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
+echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
 chmod u-w /etc/sudoers
 
 # Set the keyboard orientation
@@ -107,7 +107,7 @@ encrypt_system=`cat encrypted_system.temp`
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encryption configuration
-  echo -e "\n#Appended to file via install script (MiniArch) \nGRUB_CMDLINE_LINUX='cryptdevice=/dev/${disk_number}2:cryptdisk'" >> /etc/default/grub
+  echo "GRUB_CMDLINE_LINUX='cryptdevice=/dev/${disk_number}2:cryptdisk'" >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
@@ -131,12 +131,11 @@ grub-mkconfig -o /boot/grub/grub.cfg
 # Enabling display and network managers
 systemctl enable gdm NetworkManager bluetooth
 
-clear
-
 rm encrypted_system.temp
 rm uefi_state.temp
 rm disk_label.temp
 rm disk_number.temp
 rm finish_install.sh
 
+clear
 exit
