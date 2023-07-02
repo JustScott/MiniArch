@@ -48,6 +48,35 @@ check_uefi() {
     echo $efi > uefi_state.temp
 }
 
+
+run_installation_profile() {
+    clear
+    while true;
+    do
+        echo -e "\n # Choose an installation profile\n #"
+        echo -e "\n 1. Minimal Gnome"
+        echo -e " 2. No GUI"
+        echo -en "\n\n--> "
+        read -r install_profile_integer
+
+        if [[ $install_profile_integer == 1 ]];
+        then
+            mv MiniArch/profiles/minimal-gnome.sh /mnt
+            arch-chroot /mnt bash minimal-gnome.sh
+            break
+        fi
+        if [[ $install_profile_integer == 2 ]];
+        then
+            # Break since everything for this profile is
+            #  already installed
+            break
+        fi
+
+        clear
+        echo -e "\n --- Must Choose option 1 or 2 --- \n"
+    done
+}
+
 #----------------  Create and Format Partitions ---------------- 
 
 pacman -Sy python --noconfirm
@@ -97,12 +126,18 @@ fi
 
 #----------------  /mnt Prepping ----------------
 
-# Install basic kernel, filesystem and gnome packages
+# Install linux and linux-lts kernels, along with the most basic packages
 pacman -Sy archlinux-keyring --noconfirm
-pacstrap /mnt base linux linux-firmware linux-lts os-prober gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk grub xorg networkmanager sudo htop base-devel git vim man-db man-pages
+pacstrap /mnt base linux linux-lts linux-firmware os-prober xdg-user-dirs-gtk grub networkmanager sudo htop base-devel git vim man-db man-pages
+
 
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab
+
+
+# Runs a chroot with the custom installation profile
+run_installation_profile
+
 
 # Move our final script to /mnt
 mv MiniArch/finish_install.sh /mnt
