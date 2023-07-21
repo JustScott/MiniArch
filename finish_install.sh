@@ -129,7 +129,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 #----------------  Final Touches  ----------------
 
 # Enabling display and network managers
-systemctl enable gdm NetworkManager bluetooth
+systemctl enable NetworkManager
 
 rm encrypted_system.temp
 rm uefi_state.temp
