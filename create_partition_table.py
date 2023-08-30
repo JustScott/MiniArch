@@ -289,6 +289,8 @@ with open('uefi_state.temp', 'r')as f:
 
 existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
 
+next_open_partition = f"/dev/{disk_numbering}2"
+
 # If no partitions exist on this disk, create a new partition table from scratch
 if existing_partition_table.returncode != 0:
     if uefi == 'True':
@@ -300,7 +302,7 @@ first-lba: 2048
 sector-size: 512
 
 /dev/{disk_numbering}1 : start=        2048, size=     1048576,                          type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B
-/dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
+{next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
     elif uefi == 'False':
@@ -311,7 +313,7 @@ unit: sectors
 sector-size: 512
 
 /dev/{disk_numbering}1 : start=        2048, size=     1048576,                          type=83, bootable
-/dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
+{next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
 '''
 
 # If a partition table exists
@@ -343,6 +345,9 @@ else:
     new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
 
     table = existing_partition_table.stdout + new_partition_entry
+
+with open("next_open_partition", 'w')as file:
+    file.write(next_open_partition)
 
 
 if table:
