@@ -211,8 +211,8 @@ def get_disk_name(disk_labels_sizes_dict: dict) -> (str,str,str):
             continue
         break
 
-    if disk_label == 'nvme0n1':
-        disk_numbering = 'nvme0n1p'
+    if disk_label[-1].isdigit():
+        disk_numbering = disk_label + 'p'
     else:
         disk_numbering = disk_label
 
