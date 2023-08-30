@@ -14,8 +14,10 @@
 wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
+# Sometimes it's necessary to install this to be able to install other packages
+pacman -Sy archlinux-keyring --noconfirm
 
-pacman -Sy git
+pacman -Sy git glibc --noconfirm
 
 # Clone this repo
 git clone https://www.github.com/JustScott/MiniArch.git
