@@ -258,6 +258,7 @@ def get_partition_size(disk_size:str) -> int:
         else:
             print('\n** Must be an integer, no characters or decimals! **')
 
+
 # Alias to subprocess.run to avoid entering all the arguments each time
 #  it's used
 run_command = lambda command: subprocess.run(
@@ -266,7 +267,6 @@ run_command = lambda command: subprocess.run(
     capture_output=True,
     text=True
 )    
-
 
 disk_label, disk_numbering, disk_size = get_disk_name(
     get_remaining_disk_space()
@@ -289,6 +289,7 @@ with open('uefi_state.temp', 'r')as f:
 
 existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
 
+# Default next partition when no others exist on the disk (boot takes 1)
 next_open_partition = f"/dev/{disk_numbering}2"
 
 # If no partitions exist on this disk, create a new partition table from scratch
@@ -346,14 +347,33 @@ else:
 
     table = existing_partition_table.stdout + new_partition_entry
 
-with open("next_open_partition", 'w')as file:
+with open("next_open_partition", 'w') as file:
     file.write(next_open_partition)
 
 
 if table:
-    with open('partition_table.txt', 'w')as f:
-        f.write(table)
+    with open('partition_table.txt', 'w') as file:
+        file.write(table)
 
 os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
 
 os.system('rm partition_table.txt')
+
+# If a new partition was appended to the exist table, find the name of the
+#  boot partition (for mounting and updating grub in the installation scripts)
+boot_partition = f"/dev/{disk_numbering}2"
+if next_open_partition != f"/dev/{disk_numbering}2":
+    output = run_command(f"parted /dev/{disk_label} print -j")
+    if output.returncode == 0:
+        disk_dict = json.loads(output.stdout)
+        # Loop each partition checking for the boot flag
+        for partition_info_dict in disk_dict["disk"]["partitions"]:
+            if "flags" in partition_info_dict:
+                if "boot" in partition_info_dict["flags"]:
+                    partition_number = partition_info_dict["number"]
+                    boot_partition = f"/dev/{disk_numbering}{partition_number}"
+                    break
+
+if boot_partition:
+    with open("boot_partition") as file:
+        file.write(boot_partition)
