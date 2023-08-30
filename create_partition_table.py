@@ -346,9 +346,8 @@ else:
 
     table = existing_partition_table.stdout + new_partition_entry
 
-with open("next_open_partition", 'w') as file:
+with open("next_open_partition.temp", 'w') as file:
     file.write(next_open_partition)
-
 
 if table:
     with open('partition_table.txt', 'w') as file:
@@ -361,6 +360,7 @@ os.system('rm partition_table.txt')
 # If a new partition was appended to the exist table, find the name of the
 #  boot partition (for mounting and updating grub in the installation scripts)
 boot_partition = f"/dev/{disk_numbering}1"
+existing_boot_partition = False
 if next_open_partition != f"/dev/{disk_numbering}1":
     output = run_command(f"parted /dev/{disk_label} print -j")
     if output.returncode == 0:
@@ -371,7 +371,11 @@ if next_open_partition != f"/dev/{disk_numbering}1":
                 if "boot" in partition_info_dict["flags"]:
                     partition_number = partition_info_dict["number"]
                     boot_partition = f"/dev/{disk_numbering}{partition_number}"
+                    existing_boot_partition = False
                     break
 
-with open("boot_partition", "w") as file:
+with open("boot_partition.temp", "w") as file:
     file.write(boot_partition)
+
+with open('existing_boot_partition.temp', 'w') as file:
+    file.write(str(existing_partition_table))
