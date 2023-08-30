@@ -1,5 +1,7 @@
 import os
 from copy import deepcopy
+import subprocess
+import json
 
 # Need the size in bytes for conversion to sectors
 TERABYTE_IN_BYTES = 1099511627776
@@ -256,6 +258,14 @@ def get_partition_size(disk_size:str) -> int:
         else:
             print('\n** Must be an integer, no characters or decimals! **')
 
+# Alias to subprocess.run to avoid entering all the arguments each time
+#  it's used
+run_command = lambda command: subprocess.run(
+    command,
+    shell=True,
+    capture_output=True,
+    text=True
+)    
 
 
 disk_label, disk_numbering, disk_size = get_disk_name(
@@ -277,8 +287,12 @@ uefi = None
 with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
 
-if uefi == 'True':
-    table = f'''
+existing_partition_table = run_command(f"sfdisk /def/{disk_label} -d")
+
+# If no partitions exist on this disk, create a new partition table from scratch
+if existing_partition_table.returncode != 0:
+    if uefi == 'True':
+        table = f'''
 label: gpt
 device: /dev/{disk_label}
 unit: sectors
@@ -289,8 +303,8 @@ sector-size: 512
 /dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-elif uefi == 'False':
-    table = f'''
+    elif uefi == 'False':
+        table = f'''
 label: dos
 device: /dev/{disk_label}
 unit: sectors
@@ -300,9 +314,41 @@ sector-size: 512
 /dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
 '''
 
-with open('partition_table.txt', 'w')as f:
-    f.write(table)
+# If a partition table exists
+else:
+    # Get the json output
+    existing_partition_table_json = run_command(f"sfdisk /def/{disk_label} -J")
+    # Convert the json to a dict
+    partitions_dict = json.loads(existing_partition_table_json)
 
-os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
+    # Loop through the disk to find the partition using the last blocks
+    top_start_block = 0
+    top_start_partition_size = 0
+    top_start_partition_name = ""
+    for partition_dict in partitions_dict["partitiontable"]["partitions"]:
+        if partition_dict["start"] > top_start_block:
+            top_start_block = partition_dict["start"]
+            top_start_partition_size = partition_dict["size"]
+            top_start_partition_name = partition_dict["node"]
 
-os.system('rm partition_table.txt')
+    # The next open partition number will be the last partition number +1
+    next_open_partition = f"/dev/{disk_label}{top_start_partition_name[-1]+1}"
+    # The next partitions start block will be the last partitions start + size
+    next_partition_start_block = top_start_block + top_start_partition_size
+
+    partition_type = "83"
+    if uefi == 'True':
+        partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+
+    new_partition_entry = f"/dev/{disk_numbering}2 : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
+
+    table = partitionexisting_partition_table.stdout + "\n" + new_partition_entry
+
+
+if table:
+    with open('partition_table.txt', 'w')as f:
+        f.write(table)
+
+#os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
+
+#os.system('rm partition_table.txt')
