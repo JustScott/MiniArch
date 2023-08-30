@@ -117,6 +117,8 @@ else
   mount $system_partition /mnt
 fi
 
+
+mkdir -p /mnt/boot
 # Boot Parition
 if [ $uefi_enabled == True ]
 then
@@ -133,7 +135,6 @@ else
     then
       mkfs.ext4 $boot_partition
     fi
-  mkdir -p /mnt/boot
   mount $boot_partition /mnt/boot
 fi
 
