@@ -287,7 +287,7 @@ uefi = None
 with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
 
-existing_partition_table = run_command(f"sfdisk /def/{disk_label} -d")
+existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
 
 # If no partitions exist on this disk, create a new partition table from scratch
 if existing_partition_table.returncode != 0:
@@ -317,9 +317,9 @@ sector-size: 512
 # If a partition table exists
 else:
     # Get the json output
-    existing_partition_table_json = run_command(f"sfdisk /def/{disk_label} -J")
+    existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
     # Convert the json to a dict
-    partitions_dict = json.loads(existing_partition_table_json)
+    partitions_dict = json.loads(existing_partition_table_json.stdout)
 
     # Loop through the disk to find the partition using the last blocks
     top_start_block = 0
@@ -332,7 +332,7 @@ else:
             top_start_partition_name = partition_dict["node"]
 
     # The next open partition number will be the last partition number +1
-    next_open_partition = f"/dev/{disk_label}{top_start_partition_name[-1]+1}"
+    next_open_partition = f"/dev/{disk_label}{int(top_start_partition_name[-1])+1}"
     # The next partitions start block will be the last partitions start + size
     next_partition_start_block = top_start_block + top_start_partition_size
 
@@ -340,15 +340,15 @@ else:
     if uefi == 'True':
         partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
 
-    new_partition_entry = f"/dev/{disk_numbering}2 : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
+    new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
 
-    table = partitionexisting_partition_table.stdout + "\n" + new_partition_entry
+    table = existing_partition_table.stdout + new_partition_entry
 
 
 if table:
     with open('partition_table.txt', 'w')as f:
         f.write(table)
 
-#os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
+os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
 
-#os.system('rm partition_table.txt')
+os.system('rm partition_table.txt')
