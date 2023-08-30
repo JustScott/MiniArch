@@ -115,7 +115,7 @@ fi
 
 echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
 
-pacman -S --noconfirm linux linux-lts
+pacman -S --noconfirm linux linux-lts os-prober
 mkinitcpio --allpresets
 
 # Only install grub if a boot partition doesn't already exist
@@ -124,10 +124,10 @@ then
     # Actual Grub Install
     if [ $uefi_enabled == True ]
     then
-      pacman -S --noconfirm efibootmgr dosfstools mtools
+      pacman -Sy --noconfirm efibootmgr dosfstools mtools
       grub-install --efi-directory=/boot
     else
-      grub-install /dev/${disk_label}
+      grub-install $boot_partition
     fi
 fi
 grub-mkconfig -o /boot/grub/grub.cfg
