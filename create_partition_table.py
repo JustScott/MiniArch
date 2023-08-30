@@ -288,12 +288,16 @@ with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
 
 existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
+# Get the json output
+existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
+# Convert the json to a dict
+partitions_dict = json.loads(existing_partition_table_json.stdout)
 
 # Default next partition when no others exist on the disk (boot takes 1)
 next_open_partition = f"/dev/{disk_numbering}2"
 
 # If no partitions exist on this disk, create a new partition table from scratch
-if existing_partition_table.returncode != 0:
+if "partitions" not in partitions_dict.get("partitiontable", {}):
     if uefi == 'True':
         table = f'''
 label: gpt
@@ -319,11 +323,6 @@ sector-size: 512
 
 # If a partition table exists
 else:
-    # Get the json output
-    existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
-    # Convert the json to a dict
-    partitions_dict = json.loads(existing_partition_table_json.stdout)
-
     # Loop through the disk to find the partition using the last blocks
     top_start_block = 0
     top_start_partition_size = 0
@@ -361,8 +360,8 @@ os.system('rm partition_table.txt')
 
 # If a new partition was appended to the exist table, find the name of the
 #  boot partition (for mounting and updating grub in the installation scripts)
-boot_partition = f"/dev/{disk_numbering}2"
-if next_open_partition != f"/dev/{disk_numbering}2":
+boot_partition = f"/dev/{disk_numbering}1"
+if next_open_partition != f"/dev/{disk_numbering}1":
     output = run_command(f"parted /dev/{disk_label} print -j")
     if output.returncode == 0:
         disk_dict = json.loads(output.stdout)
@@ -374,6 +373,5 @@ if next_open_partition != f"/dev/{disk_numbering}2":
                     boot_partition = f"/dev/{disk_numbering}{partition_number}"
                     break
 
-if boot_partition:
-    with open("boot_partition") as file:
-        file.write(boot_partition)
+with open("boot_partition", "w") as file:
+    file.write(boot_partition)
