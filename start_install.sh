@@ -1,21 +1,12 @@
 #!/bin/bash
 
-# Bring in variables put in files by the 'create_partition_table.py` script
-#
-disk_label=$(cat disk_label.temp)
-disk_number=$(cat disk_number.temp)
-boot_partition=$(cat boot_partition.temp)
-existing_boot_partition=$(cat existing_boot_partition.temp)
-system_partition=$(cat next_open_partition.temp)
-
 #----------------  Defining Functions ----------------
 
 encrypt_partition() {
-  system_partition=$(cat next_open_partition.temp)
   clear
   while :
     do
-      cryptsetup luksFormat -s 512 -h sha512 $system_partition
+      cryptsetup luksFormat -s 512 -h sha512 $(cat next_open_partition.temp)
       if [ $? == 0 ]
       then
         break
@@ -91,7 +82,7 @@ run_installation_profile() {
 pacman -Sy python --noconfirm
 
 check_uefi
-uefi_enabled=`cat uefi_state.temp`
+uefi_enabled=$(cat uefi_state.temp)
 
 # Run python script, exit if script returns error code
 python3 MiniArch/create_partition_table.py
@@ -102,6 +93,14 @@ fi
 
 clear
 
+# Bring in variables put in files by the 'create_partition_table.py` script
+#
+disk_label=$(cat disk_label.temp)
+disk_number=$(cat disk_number.temp)
+boot_partition=$(cat boot_partition.temp)
+existing_boot_partition=$(cat existing_boot_partition.temp)
+system_partition=$(cat next_open_partition.temp)
+
 ask_set_encryption
 
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
@@ -109,34 +108,27 @@ then
   # Encrypt Filesystem Partition
   encrypt_partition
   cryptsetup open $system_partition cryptdisk
-  mkfs.ext4 /dev/mapper/cryptdisk
+  echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
 else
   # Unencrypted Filesystem Partition
-  mkfs.ext4 $system_partition
+  echo 'y' | mkfs.ext4 $system_partition
   mount $system_partition /mnt
 fi
 
+# Only create a new boot partition if one doesn't already exist
+if [[ $existing_boot_partition != True ]];
+then
+    if [[ $uefi_enabled == True ]];
+    then
+      echo 'y' | mkfs.fat -F 32 $boot_partition
+    else
+      echo 'y' | mkfs.ext4 $boot_partition
+    fi
+fi
 
 mkdir -p /mnt/boot
-# Boot Parition
-if [ $uefi_enabled == True ]
-then
-    # Only create a new boot partition if one doesn't already exist
-    if [[ $existing_boot_partition != True ]];
-    then
-      mkfs.fat -F 32 $boot_partition
-    fi
-  mkdir -p /mnt/boot
-  mount $boot_partition /mnt/boot
-else
-    # Only create a new boot partition if one doesn't already exist
-    if [[ $existing_boot_partition != True ]];
-    then
-      mkfs.ext4 $boot_partition
-    fi
-  mount $boot_partition /mnt/boot
-fi
+mount $boot_partition /mnt/boot
 
 
 #----------------  /mnt Prepping ----------------

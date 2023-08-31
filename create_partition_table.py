@@ -361,7 +361,7 @@ os.system('rm partition_table.txt')
 #  boot partition (for mounting and updating grub in the installation scripts)
 boot_partition = f"/dev/{disk_numbering}1"
 existing_boot_partition = False
-if next_open_partition != f"/dev/{disk_numbering}1":
+if next_open_partition != f"/dev/{disk_numbering}2":
     output = run_command(f"parted /dev/{disk_label} print -j")
     if output.returncode == 0:
         disk_dict = json.loads(output.stdout)
@@ -378,4 +378,4 @@ with open("boot_partition.temp", "w") as file:
     file.write(boot_partition)
 
 with open('existing_boot_partition.temp', 'w') as file:
-    file.write(str(existing_partition_table))
+    file.write(str(existing_boot_partition))
