@@ -91,8 +91,6 @@ then
     exit
 fi
 
-clear
-
 # Bring in variables put in files by the 'create_partition_table.py` script
 #
 disk_label=$(cat disk_label.temp)
@@ -137,14 +135,11 @@ mount $boot_partition /mnt/boot
 pacman -Sy archlinux-keyring --noconfirm
 pacstrap /mnt base linux linux-lts linux-firmware os-prober xdg-user-dirs-gtk grub networkmanager sudo htop base-devel git vim man-db man-pages
 
-
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab
 
-
 # Runs a chroot with the custom installation profile
 run_installation_profile
-
 
 # Move our final script to /mnt
 mv MiniArch/finish_install.sh /mnt
@@ -158,12 +153,17 @@ mv next_open_partition.temp /mnt
 mv boot_partition.temp /mnt
 mv existing_boot_partition.temp /mnt
 
-clear
 # Chroot into /mnt, and run the finish_install.sh script
 arch-chroot /mnt bash finish_install.sh
+if [ $? == 1 ]
+then
+    echo "'arch-chroot /mnt bash finish_install.sh' failed"
+    exit
+fi
 
 # After finish_install.sh is done
 umount -a
+
 clear
 
 echo -e '\n - Installation Successful! - \n'

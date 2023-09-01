@@ -53,7 +53,6 @@ echo "$system_name" > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
 hostnamectl set-hostname "$system_name"
 
-clear
 
 # Set the root password
 set_user_password root
@@ -94,7 +93,6 @@ echo '/swapfile none swap 0 0' >> /etc/fstab
 
 
 #----------------  Grub Configuration ----------------
-clear
 
 uefi_enabled=$(cat uefi_state.temp)
 
@@ -146,6 +144,4 @@ rm next_open_partition.temp
 rm boot_partition.temp
 rm existing_boot_partition.temp
 
-
-clear
 exit

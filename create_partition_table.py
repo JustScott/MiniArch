@@ -334,7 +334,7 @@ else:
             top_start_partition_name = partition_dict["node"]
 
     # The next open partition number will be the last partition number +1
-    next_open_partition = f"/dev/{disk_label}{int(top_start_partition_name[-1])+1}"
+    next_open_partition = f"/dev/{disk_numbering}{int(top_start_partition_name[-1])+1}"
     # The next partitions start block will be the last partitions start + size
     next_partition_start_block = top_start_block + top_start_partition_size
 
