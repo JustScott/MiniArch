@@ -51,10 +51,8 @@ system_name="$username"
 
 echo "$system_name" > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
-hostnamectl set-hostname "$system_name"
 
 clear
-
 # Set the root password
 set_user_password root
 
@@ -94,35 +92,40 @@ echo '/swapfile none swap 0 0' >> /etc/fstab
 
 
 #----------------  Grub Configuration ----------------
-clear
 
-uefi_enabled=`cat uefi_state.temp`
+uefi_enabled=$(cat uefi_state.temp)
 
-disk_label=`cat disk_label.temp`
+disk_label=$(cat disk_label.temp)
+disk_number=$(cat disk_number.temp)
+system_partition=$(cat next_open_partition.temp)
+boot_partition=$(cat boot_partition.temp)
+existing_boot_partition=$(cat existing_boot_partition.temp)
 
-disk_number=`cat disk_number.temp`
-
-encrypt_system=`cat encrypted_system.temp`
+encrypt_system=$(cat encrypted_system.temp)
 
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
   # Encryption configuration
-  echo "GRUB_CMDLINE_LINUX='cryptdevice=/dev/${disk_number}2:cryptdisk'" >> /etc/default/grub
+  echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
   echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
 echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
 
-pacman -S --noconfirm linux linux-lts
+pacman -S --noconfirm linux linux-lts os-prober
 mkinitcpio --allpresets
 
-# Actual Grub Install
-if [ $uefi_enabled == True ]
+# Only install grub if a boot partition doesn't already exist
+if [[ $existing_boot_partition != True ]];
 then
-  pacman -S --noconfirm efibootmgr dosfstools mtools
-  grub-install --efi-directory=/boot
-else
-  grub-install /dev/${disk_label}
+    # Actual Grub Install
+    if [ $uefi_enabled == True ]
+    then
+      pacman -Sy --noconfirm efibootmgr dosfstools mtools
+      grub-install --efi-directory=/boot
+    else
+      grub-install $boot_partition
+    fi
 fi
 grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -136,6 +139,8 @@ rm uefi_state.temp
 rm disk_label.temp
 rm disk_number.temp
 rm finish_install.sh
+rm next_open_partition.temp
+rm boot_partition.temp
+rm existing_boot_partition.temp
 
-clear
 exit

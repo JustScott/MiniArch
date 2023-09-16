@@ -1,5 +1,7 @@
 import os
 from copy import deepcopy
+import subprocess
+import json
 
 # Need the size in bytes for conversion to sectors
 TERABYTE_IN_BYTES = 1099511627776
@@ -257,6 +259,14 @@ def get_partition_size(disk_size:str) -> int:
             print('\n** Must be an integer, no characters or decimals! **')
 
 
+# Alias to subprocess.run to avoid entering all the arguments each time
+#  it's used
+run_command = lambda command: subprocess.run(
+    command,
+    shell=True,
+    capture_output=True,
+    text=True
+)    
 
 disk_label, disk_numbering, disk_size = get_disk_name(
     get_remaining_disk_space()
@@ -277,8 +287,19 @@ uefi = None
 with open('uefi_state.temp', 'r')as f:
     uefi = f.read().strip()
 
-if uefi == 'True':
-    table = f'''
+existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
+# Get the json output
+existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
+# Convert the json to a dict
+partitions_dict = json.loads(existing_partition_table_json.stdout)
+
+# Default next partition when no others exist on the disk (boot takes 1)
+next_open_partition = f"/dev/{disk_numbering}2"
+
+# If no partitions exist on this disk, create a new partition table from scratch
+if "partitions" not in partitions_dict.get("partitiontable", {}):
+    if uefi == 'True':
+        table = f'''
 label: gpt
 device: /dev/{disk_label}
 unit: sectors
@@ -286,23 +307,75 @@ first-lba: 2048
 sector-size: 512
 
 /dev/{disk_numbering}1 : start=        2048, size=     1048576,                          type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B
-/dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
+{next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-elif uefi == 'False':
-    table = f'''
+    elif uefi == 'False':
+        table = f'''
 label: dos
 device: /dev/{disk_label}
 unit: sectors
 sector-size: 512
 
 /dev/{disk_numbering}1 : start=        2048, size=     1048576,                          type=83, bootable
-/dev/{disk_numbering}2 : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
+{next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
 '''
 
-with open('partition_table.txt', 'w')as f:
-    f.write(table)
+# If a partition table exists
+else:
+    # Loop through the disk to find the partition using the last blocks
+    top_start_block = 0
+    top_start_partition_size = 0
+    top_start_partition_name = ""
+    for partition_dict in partitions_dict["partitiontable"]["partitions"]:
+        if partition_dict["start"] > top_start_block:
+            top_start_block = partition_dict["start"]
+            top_start_partition_size = partition_dict["size"]
+            top_start_partition_name = partition_dict["node"]
+
+    # The next open partition number will be the last partition number +1
+    next_open_partition = f"/dev/{disk_numbering}{int(top_start_partition_name[-1])+1}"
+    # The next partitions start block will be the last partitions start + size
+    next_partition_start_block = top_start_block + top_start_partition_size
+
+    partition_type = "83"
+    if uefi == 'True':
+        partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+
+    new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
+
+    table = existing_partition_table.stdout + new_partition_entry
+
+with open("next_open_partition.temp", 'w') as file:
+    file.write(next_open_partition)
+
+if table:
+    with open('partition_table.txt', 'w') as file:
+        file.write(table)
 
 os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
 
 os.system('rm partition_table.txt')
+
+# If a new partition was appended to the exist table, find the name of the
+#  boot partition (for mounting and updating grub in the installation scripts)
+boot_partition = f"/dev/{disk_numbering}1"
+existing_boot_partition = False
+if next_open_partition != f"/dev/{disk_numbering}2":
+    output = run_command(f"parted /dev/{disk_label} print -j")
+    if output.returncode == 0:
+        disk_dict = json.loads(output.stdout)
+        # Loop each partition checking for the boot flag
+        for partition_info_dict in disk_dict["disk"]["partitions"]:
+            if "flags" in partition_info_dict:
+                if "boot" in partition_info_dict["flags"]:
+                    partition_number = partition_info_dict["number"]
+                    boot_partition = f"/dev/{disk_numbering}{partition_number}"
+                    existing_boot_partition = False
+                    break
+
+with open("boot_partition.temp", "w") as file:
+    file.write(boot_partition)
+
+with open('existing_boot_partition.temp', 'w') as file:
+    file.write(str(existing_boot_partition))

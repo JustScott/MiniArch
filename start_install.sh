@@ -6,7 +6,7 @@ encrypt_partition() {
   clear
   while :
     do
-      cryptsetup luksFormat -s 512 -h sha512 /dev/${disk_number}2
+      cryptsetup luksFormat -s 512 -h sha512 $(cat next_open_partition.temp)
       if [ $? == 0 ]
       then
         break
@@ -82,7 +82,7 @@ run_installation_profile() {
 pacman -Sy python --noconfirm
 
 check_uefi
-uefi_enabled=`cat uefi_state.temp`
+uefi_enabled=$(cat uefi_state.temp)
 
 # Run python script, exit if script returns error code
 python3 MiniArch/create_partition_table.py
@@ -91,10 +91,13 @@ then
     exit
 fi
 
-disk_label=`cat disk_label.temp`
-disk_number=`cat disk_number.temp`
-
-clear
+# Bring in variables put in files by the 'create_partition_table.py` script
+#
+disk_label=$(cat disk_label.temp)
+disk_number=$(cat disk_number.temp)
+boot_partition=$(cat boot_partition.temp)
+existing_boot_partition=$(cat existing_boot_partition.temp)
+system_partition=$(cat next_open_partition.temp)
 
 ask_set_encryption
 
@@ -102,26 +105,28 @@ if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system
 then
   # Encrypt Filesystem Partition
   encrypt_partition
-  cryptsetup open /dev/${disk_number}2 cryptdisk
-  mkfs.ext4 /dev/mapper/cryptdisk
+  cryptsetup open $system_partition cryptdisk
+  echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
   mount /dev/mapper/cryptdisk /mnt
 else
   # Unencrypted Filesystem Partition
-  mkfs.ext4 /dev/${disk_number}2
-  mount /dev/${disk_number}2 /mnt
+  echo 'y' | mkfs.ext4 $system_partition
+  mount $system_partition /mnt
 fi
 
-# Boot Parition
-if [ $uefi_enabled == True ]
+# Only create a new boot partition if one doesn't already exist
+if [[ $existing_boot_partition != True ]];
 then
-  mkfs.fat -F 32 /dev/${disk_number}1
-  mkdir -p /mnt/boot
-  mount /dev/${disk_number}1 /mnt/boot
-else
-  mkfs.ext4 /dev/${disk_number}1
-  mkdir -p /mnt/boot
-  mount /dev/${disk_number}1 /mnt/boot
+    if [[ $uefi_enabled == True ]];
+    then
+      echo 'y' | mkfs.fat -F 32 $boot_partition
+    else
+      echo 'y' | mkfs.ext4 $boot_partition
+    fi
 fi
+
+mkdir -p /mnt/boot
+mount $boot_partition /mnt/boot
 
 
 #----------------  /mnt Prepping ----------------
@@ -130,14 +135,11 @@ fi
 pacman -Sy archlinux-keyring --noconfirm
 pacstrap /mnt base linux linux-lts linux-firmware os-prober xdg-user-dirs-gtk grub networkmanager sudo htop base-devel git vim man-db man-pages
 
-
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab
 
-
 # Runs a chroot with the custom installation profile
 run_installation_profile
-
 
 # Move our final script to /mnt
 mv MiniArch/finish_install.sh /mnt
@@ -147,13 +149,21 @@ echo $encrypt_system > /mnt/encrypted_system.temp
 mv uefi_state.temp /mnt
 mv disk_label.temp /mnt
 mv disk_number.temp /mnt
+mv next_open_partition.temp /mnt
+mv boot_partition.temp /mnt
+mv existing_boot_partition.temp /mnt
 
-clear
 # Chroot into /mnt, and run the finish_install.sh script
 arch-chroot /mnt bash finish_install.sh
+if [ $? == 1 ]
+then
+    echo "'arch-chroot /mnt bash finish_install.sh' failed"
+    exit
+fi
 
 # After finish_install.sh is done
 umount -a
+
 clear
 
 echo -e '\n - Installation Successful! - \n'
