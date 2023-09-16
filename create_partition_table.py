@@ -291,7 +291,11 @@ existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
 # Get the json output
 existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
 # Convert the json to a dict
-partitions_dict = json.loads(existing_partition_table_json.stdout)
+partitions_dict = {}
+try:
+    partitions_dict = json.loads(existing_partition_table_json.stdout)
+except json.decoder.JSONDecodeError:
+    pass
 
 # Default next partition when no others exist on the disk (boot takes 1)
 next_open_partition = f"/dev/{disk_numbering}2"
