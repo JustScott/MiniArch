@@ -14,7 +14,8 @@
 wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
-# Sometimes it's necessary to install this to be able to install other packages
+# If you experience any keyring errors, run these commands
+pacman-key --init
 pacman -Sy archlinux-keyring --noconfirm
 
 pacman -Sy git glibc --noconfirm
