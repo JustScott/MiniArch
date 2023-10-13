@@ -16,7 +16,7 @@ wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
 # If you experience any keyring errors, run these commands
 pacman-key --init
-pacman -Sy archlinux-keyring --noconfirm
+pacman-key --refresh-keys
 
 pacman -Sy git glibc --noconfirm
 
@@ -25,6 +25,5 @@ git clone https://www.github.com/JustScott/MiniArch.git
 
 # Run the install script
 bash MiniArch/start_install.sh
-
 ```
 
