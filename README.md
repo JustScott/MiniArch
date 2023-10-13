@@ -14,11 +14,18 @@
 wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
-# If you experience any keyring errors, run these commands
-pacman-key --init
-pacman-key --refresh-keys
 
 pacman -Sy git glibc --noconfirm
+# -- -- # 
+# Only run the pacman commands below if you experience key errors
+#  with the above pacman command (Run it again after running the
+#  commands below).
+umount /etc/pacman.d/gnupg
+rm -rf /etc/pacman.d/gnupg
+pacman-key --init
+pacman-key --populate
+pacman -Sy archlinux-keyring --noconfirm
+# -- -- #
 
 # Clone this repo
 git clone https://www.github.com/JustScott/MiniArch.git
