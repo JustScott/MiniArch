@@ -52,10 +52,6 @@ system_name="$username"
 echo "$system_name" > /etc/hostname
 echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
 
-clear
-# Set the root password
-set_user_password root
-
 
 #----------------  User Configuration ----------------
 clear
