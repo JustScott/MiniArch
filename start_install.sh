@@ -133,7 +133,10 @@ mount $boot_partition /mnt/boot
 
 # Install linux and linux-lts kernels, along with the most basic packages
 pacman -Sy archlinux-keyring --noconfirm
-pacstrap /mnt base linux linux-lts linux-firmware os-prober xdg-user-dirs-gtk grub networkmanager sudo htop base-devel git vim man-db man-pages
+pacstrap /mnt \
+    base linux linux-lts linux-firmware os-prober \
+    xdg-user-dirs-gtk grub networkmanager sudo htop \
+    base-devel git vim man-db man-pages
 
 # Tell the system where the partitions are when starting
 genfstab -U /mnt >> /mnt/etc/fstab

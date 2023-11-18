@@ -9,7 +9,11 @@
 #
 ###
 
-pacman -Sy gnome-control-center gnome-backgrounds gnome-terminal gnome-keyring gnome-logs gnome-settings-daemon gnome-calculator gnome-software gvfs malcontent mutter gdm nautilus xdg-user-dirs-gtk xorg --noconfirm
+pacman -Sy --noconfirm \
+    gnome-control-center gnome-backgrounds gnome-terminal \
+    gnome-keyring gnome-logs gnome-settings-daemon \
+    gnome-calculator gnome-software gvfs malcontent mutter \
+    gdm nautilus xdg-user-dirs-gtk xorg
 
 sudo systemctl enable gdm
 
