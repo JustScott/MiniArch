@@ -1,43 +1,43 @@
 #----------------  Defining Functions ----------------
 
 set_username() {
-  #
-  # Doesn't actually set the username, just returns it in
-  #  the variable '$username'
-  #
-  while : 
-  do
-    echo -n 'Enter Username: '
-    read username
-    echo -n 'Verify Username: '
-    read username_verify
+    #
+    # Doesn't actually set the username, just returns it in
+    #  the variable '$username'
+    #
+    while : 
+    do
+        echo -n 'Enter Username: '
+        read username
+        echo -n 'Verify Username: '
+        read username_verify
 
-    if [ $username == $username_verify ]
-    then
-      clear
-      echo -e " - Set as '$username' - \n"
-      sleep 2
-      break
-    else
-      clear
-      echo -e " - Usernames Don't Match - \n"
-    fi
-  done
+        if [ $username == $username_verify ]
+        then
+            clear
+            echo -e " - Set as '$username' - \n"
+            sleep 2
+            break
+        else
+            clear
+            echo -e " - Usernames Don't Match - \n"
+        fi
+    done
 }
 
 set_user_password() {
-  echo -e "\n - Set Password for '$1' - "
-  while :
+    echo -e "\n - Set Password for '$1' - "
+    while :
     do
-      passwd $1
-      if [ $? == 0 ]
-      then
-        break
-      else
-        clear
-        echo -e " - Passwords Don't Match - \n"
-      fi
-   done
+        passwd $1
+        if [ $? == 0 ]
+        then
+            break
+        else
+            clear
+            echo -e " - Passwords Don't Match - \n"
+        fi
+    done
 }
 
 
@@ -99,9 +99,9 @@ encrypt_system=$(cat encrypted_system.temp)
 
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
-  # Encryption configuration
-  echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
-  echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
+    # Encryption configuration
+    echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
+    echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
 fi
 
 echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
@@ -115,10 +115,10 @@ then
     # Actual Grub Install
     if [ $uefi_enabled == True ]
     then
-      pacman -Sy --noconfirm efibootmgr dosfstools mtools
-      grub-install --efi-directory=/boot
+        pacman -Sy --noconfirm efibootmgr dosfstools mtools
+        grub-install --efi-directory=/boot
     else
-      grub-install $boot_partition
+        grub-install $boot_partition
     fi
 fi
 grub-mkconfig -o /boot/grub/grub.cfg

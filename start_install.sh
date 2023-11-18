@@ -3,36 +3,36 @@
 #----------------  Defining Functions ----------------
 
 encrypt_partition() {
-  clear
-  while :
+    clear
+    while :
     do
-      cryptsetup luksFormat -s 512 -h sha512 $(cat next_open_partition.temp)
-      if [ $? == 0 ]
-      then
-        break
-      else
-        clear
-        echo -e " - Try Again - \n"
-      fi
-   done
+        cryptsetup luksFormat -s 512 -h sha512 $(cat next_open_partition.temp)
+        if [ $? == 0 ]
+        then
+            break
+        else
+            clear
+            echo -e " - Try Again - \n"
+        fi
+    done
 }
 
 ask_set_encryption() {
-  while : 
-  do
-    echo -n 'Use An Encrypted System? [y/n]: '
-    read encrypt_system
-    echo -n 'Are you sure? [y/n]: '
-    read verify_encrypt
+    while : 
+    do
+        echo -n 'Use An Encrypted System? [y/n]: '
+        read encrypt_system
+        echo -n 'Are you sure? [y/n]: '
+        read verify_encrypt
 
-    if [ $encrypt_system == $verify_encrypt ]
-    then
-      break
-    else
-      clear
-      echo -e " - Answers Don't Match - \n"
-    fi
-  done
+        if [ $encrypt_system == $verify_encrypt ]
+        then
+            break
+        else
+            clear
+            echo -e " - Answers Don't Match - \n"
+        fi
+    done
 }
 
 check_uefi() {
@@ -101,15 +101,29 @@ ask_set_encryption
 
 if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
 then
-  # Encrypt Filesystem Partition
-  encrypt_partition
-  cryptsetup open $system_partition cryptdisk
-  echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
-  mount /dev/mapper/cryptdisk /mnt
+    # Encrypt Filesystem Partition
+    encrypt_partition
+
+    # Prompt the user for the encrypted partitions key until
+    #  they enter the correct one
+    while :
+    do
+        cryptsetup open $system_partition cryptdisk
+        if [ $? == 0 ]
+        then
+            break
+        else
+            clear
+            echo -e " - Try Again - \n"
+        fi
+    done
+
+    echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
+    mount /dev/mapper/cryptdisk /mnt
 else
-  # Unencrypted Filesystem Partition
-  echo 'y' | mkfs.ext4 $system_partition
-  mount $system_partition /mnt
+    # Unencrypted Filesystem Partition
+    echo 'y' | mkfs.ext4 $system_partition
+    mount $system_partition /mnt
 fi
 
 # Only create a new boot partition if one doesn't already exist
@@ -117,9 +131,9 @@ if [[ $existing_boot_partition != True ]];
 then
     if [[ $uefi_enabled == True ]];
     then
-      echo 'y' | mkfs.fat -F 32 $boot_partition
+        echo 'y' | mkfs.fat -F 32 $boot_partition
     else
-      echo 'y' | mkfs.ext4 $boot_partition
+        echo 'y' | mkfs.ext4 $boot_partition
     fi
 fi
 
