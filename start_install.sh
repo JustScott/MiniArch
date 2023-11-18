@@ -93,8 +93,6 @@ fi
 
 # Bring in variables put in files by the 'create_partition_table.py` script
 #
-disk_label=$(cat disk_label.temp)
-disk_number=$(cat disk_number.temp)
 boot_partition=$(cat boot_partition.temp)
 existing_boot_partition=$(cat existing_boot_partition.temp)
 system_partition=$(cat next_open_partition.temp)
@@ -150,8 +148,6 @@ mv MiniArch/finish_install.sh /mnt
 # Create files to pass variables to finish_install.sh
 echo $encrypt_system > /mnt/encrypted_system.temp
 mv uefi_state.temp /mnt
-mv disk_label.temp /mnt
-mv disk_number.temp /mnt
 mv next_open_partition.temp /mnt
 mv boot_partition.temp /mnt
 mv existing_boot_partition.temp /mnt

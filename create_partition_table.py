@@ -155,9 +155,10 @@ def get_remaining_disk_space() -> dict:
     return disk_labels_sizes_dict
 
 
-def get_disk_name(disk_labels_sizes_dict: dict) -> (str,str,str):
+def get_disk_information(disk_labels_sizes_dict: dict) -> tuple[str,str,str]:
     '''
-    Gets the name of the disk the user wants arch installed on.
+    Prompts the user to choose a disk for their partitions, and returns
+    the disks label, partition numbering scheme, and remaining space
 
     Args:
         disk_labels_sizes_dict (dict):
@@ -268,42 +269,62 @@ run_command = lambda command: subprocess.run(
     text=True
 )    
 
-disk_label, disk_numbering, disk_size = get_disk_name(
-    get_remaining_disk_space()
-)
+def write_vars_to_file(
+        boot_partition: str, 
+        existing_boot_partition: bool, 
+        next_open_partition: str
+    ):
+    '''
+    Writes variables to files so the bash scripts can read them
+    '''
+    with open("boot_partition.temp", "w") as file:
+        file.write(boot_partition)
 
-root_partition_size_in_sectors = get_partition_size(disk_size)
+    with open('existing_boot_partition.temp', 'w') as file:
+        file.write(str(existing_boot_partition))
 
-## Writes the label and numbering to files for further use in the bash scripts
-with open('disk_label.temp', 'w')as f:
-    f.write(disk_label)
-with open('disk_number.temp', 'w')as f:
-    f.write(disk_numbering)
+    with open("next_open_partition.temp", 'w') as file:
+        file.write(next_open_partition)
 
 
-uefi = None
+def create_partition_table(
+        uefi: bool, 
+        root_partition_size_in_sectors: int, 
+        disk_label: str, 
+        disk_numbering: str
+    ) -> str | None:
+    '''
+    Creates the partition table and writes it to the disk
 
-## Different table types are needed for uefi and none-uefi systems
-with open('uefi_state.temp', 'r')as f:
-    uefi = f.read().strip()
+    Args:
+        uefi (bool): 
+            Whether the system is uefi or not defines the type
+            of partition table to use
 
-existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
-# Get the json output
-existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
-# Convert the json to a dict
-partitions_dict = {}
-try:
-    partitions_dict = json.loads(existing_partition_table_json.stdout)
-except json.decoder.JSONDecodeError:
-    pass
+        root_partition_size_in_sectors (int): As the name implies
 
-# Default next partition when no others exist on the disk (boot takes 1)
-next_open_partition = f"/dev/{disk_numbering}2"
+    Returns:
+        str: The next open partition
+        OR
+        None: if something failed and the partition table wasn't written to disk
+    '''
+    existing_partition_table = run_command(f"sfdisk /dev/{disk_label} -d")
+    # Get the json output
+    existing_partition_table_json = run_command(f"sfdisk /dev/{disk_label} -J")
+    # Convert the json to a dict
+    partitions_dict = {}
+    try:
+        partitions_dict = json.loads(existing_partition_table_json.stdout)
+    except json.decoder.JSONDecodeError:
+        pass
 
-# If no partitions exist on this disk, create a new partition table from scratch
-if "partitions" not in partitions_dict.get("partitiontable", {}):
-    if uefi == 'True':
-        table = f'''
+    # Default next partition when no others exist on the disk (boot takes 1)
+    next_open_partition = f"/dev/{disk_numbering}2"
+
+    # If no partitions exist on this disk, create a new partition table from scratch
+    if "partitions" not in partitions_dict.get("partitiontable", {}):
+        if uefi == 'True':
+            table = f'''
 label: gpt
 device: /dev/{disk_label}
 unit: sectors
@@ -314,8 +335,8 @@ sector-size: 512
 {next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-    elif uefi == 'False':
-        table = f'''
+        elif uefi == 'False':
+            table = f'''
 label: dos
 device: /dev/{disk_label}
 unit: sectors
@@ -325,61 +346,108 @@ sector-size: 512
 {next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=83
 '''
 
-# If a partition table exists
-else:
-    # Loop through the disk to find the partition using the last blocks
-    top_start_block = 0
-    top_start_partition_size = 0
-    top_start_partition_name = ""
-    for partition_dict in partitions_dict["partitiontable"]["partitions"]:
-        if partition_dict["start"] > top_start_block:
-            top_start_block = partition_dict["start"]
-            top_start_partition_size = partition_dict["size"]
-            top_start_partition_name = partition_dict["node"]
+    # If a partition table exists
+    else:
+        # Loop through the disk to find the partition using the last blocks
+        top_start_block = 0
+        top_start_partition_size = 0
+        top_start_partition_name = ""
+        for partition_dict in partitions_dict["partitiontable"]["partitions"]:
+            if partition_dict["start"] > top_start_block:
+                top_start_block = partition_dict["start"]
+                top_start_partition_size = partition_dict["size"]
+                top_start_partition_name = partition_dict["node"]
 
-    # The next open partition number will be the last partition number +1
-    next_open_partition = f"/dev/{disk_numbering}{int(top_start_partition_name[-1])+1}"
-    # The next partitions start block will be the last partitions start + size
-    next_partition_start_block = top_start_block + top_start_partition_size
+        # The next open partition number will be the last partition number +1
+        next_open_partition = f"/dev/{disk_numbering}{int(top_start_partition_name[-1])+1}"
+        # The next partitions start block will be the last partitions start + size
+        next_partition_start_block = top_start_block + top_start_partition_size
 
-    partition_type = "83"
-    if uefi == 'True':
-        partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+        partition_type = "83"
+        if uefi == 'True':
+            partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
 
-    new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
+        new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
 
-    table = existing_partition_table.stdout + new_partition_entry
+        table = existing_partition_table.stdout + new_partition_entry
 
-with open("next_open_partition.temp", 'w') as file:
-    file.write(next_open_partition)
+    if table:
+        with open('partition_table.txt', 'w') as file:
+            file.write(table)
 
-if table:
-    with open('partition_table.txt', 'w') as file:
-        file.write(table)
+        os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
 
-os.system(f'sfdisk /dev/{disk_label} < partition_table.txt')
+        os.system('rm partition_table.txt')
 
-os.system('rm partition_table.txt')
+        return next_open_partition
 
-# If a new partition was appended to the exist table, find the name of the
-#  boot partition (for mounting and updating grub in the installation scripts)
-boot_partition = f"/dev/{disk_numbering}1"
-existing_boot_partition = False
-if next_open_partition != f"/dev/{disk_numbering}2":
-    output = run_command(f"parted /dev/{disk_label} print -j")
-    if output.returncode == 0:
-        disk_dict = json.loads(output.stdout)
-        # Loop each partition checking for the boot flag
-        for partition_info_dict in disk_dict["disk"]["partitions"]:
-            if "flags" in partition_info_dict:
-                if "boot" in partition_info_dict["flags"]:
-                    partition_number = partition_info_dict["number"]
-                    boot_partition = f"/dev/{disk_numbering}{partition_number}"
-                    existing_boot_partition = False
-                    break
 
-with open("boot_partition.temp", "w") as file:
-    file.write(boot_partition)
+def get_boot_partition_information(next_open_partition: str, disk_numbering: str) -> tuple[bool, str]:
+    '''
+    If a new partition was appended to an existing partition 
+    table, find the name of the existing boot partition in that table
+    (for mounting and updating grub in the installation scripts)
 
-with open('existing_boot_partition.temp', 'w') as file:
-    file.write(str(existing_boot_partition))
+    Args:
+        str: The next open partition space, ex) '/dev/vda3'
+
+        str: 
+            Disk names that end in an integer, like 'nvme0n1', need a character
+            like 'p' before the partition number, ex) '/dev/nvme0n1p3'. So this
+            parameter should be something like: 'vda' or 'nvme0n1p'.
+
+    Returns:
+        bool: True if there's existing boot partition
+
+        str: 
+            Either the existing boot partition, or the partition
+            that will be made into the new boot partition
+    '''
+    # These will be returned if the conditions below aren't met
+    boot_partition = f"/dev/{disk_numbering}1"
+    existing_boot_partition = False
+
+    # If there are other partitions on the disk
+    if next_open_partition != f"/dev/{disk_numbering}2":
+        # Get the existing partiton table
+        output = run_command(f"parted /dev/{disk_label} print -j")
+        if output.returncode == 0:
+            disk_dict = json.loads(output.stdout)
+            # Loop each partition checking for the boot flag
+            for partition_info_dict in disk_dict["disk"]["partitions"]:
+                if "flags" in partition_info_dict:
+                    if "boot" in partition_info_dict["flags"]:
+                        partition_number = partition_info_dict["number"]
+                        boot_partition = f"/dev/{disk_numbering}{partition_number}"
+                        existing_boot_partition = True
+                        break
+
+    return existing_boot_partition, boot_partition
+
+
+
+if __name__=="__main__":
+    disk_label_remaining_size_dict = get_remaining_disk_space()
+
+    disk_label, disk_numbering, disk_size = get_disk_information(
+        disk_label_remaining_size_dict
+    )
+
+    root_partition_size_in_sectors = get_partition_size(disk_size)
+
+    with open('uefi_state.temp', 'r')as file:
+        uefi = file.read().strip()
+
+    next_open_partition = create_partition_table(
+        uefi, 
+        root_partition_size_in_sectors,
+        disk_label, 
+        disk_numbering
+    )
+
+    existing_boot_partition, boot_partition = get_boot_partition_information(
+        next_open_partition, disk_numbering
+    )
+
+    write_vars_to_file(boot_partition, existing_boot_partition, next_open_partition)
+

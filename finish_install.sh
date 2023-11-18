@@ -91,8 +91,6 @@ echo '/swapfile none swap 0 0' >> /etc/fstab
 
 uefi_enabled=$(cat uefi_state.temp)
 
-disk_label=$(cat disk_label.temp)
-disk_number=$(cat disk_number.temp)
 system_partition=$(cat next_open_partition.temp)
 boot_partition=$(cat boot_partition.temp)
 existing_boot_partition=$(cat existing_boot_partition.temp)
@@ -132,8 +130,6 @@ systemctl enable NetworkManager
 
 rm encrypted_system.temp
 rm uefi_state.temp
-rm disk_label.temp
-rm disk_number.temp
 rm finish_install.sh
 rm next_open_partition.temp
 rm boot_partition.temp
