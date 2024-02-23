@@ -1,138 +1,147 @@
 #----------------  Defining Functions ----------------
 
-set_username() {
-    #
-    # Doesn't actually set the username, just returns it in
-    #  the variable '$username'
-    #
-    while : 
-    do
-        echo -n 'Enter Username: '
-        read username
-        echo -n 'Verify Username: '
-        read username_verify
+{
+    set_username() {
+        #
+        # Doesn't actually set the username, just returns it in
+        #  the variable '$username'
+        #
+        while : 
+        do
+            echo -n 'Enter Username: '
+            read username
+            echo -n 'Verify Username: '
+            read username_verify
 
-        if [ $username == $username_verify ]
-        then
-            clear
-            echo -e " - Set as '$username' - \n"
-            sleep 2
-            break
-        else
-            clear
-            echo -e " - Usernames Don't Match - \n"
-        fi
-    done
-}
+            if [ $username == $username_verify ]
+            then
+                clear
+                echo -e " - Set as '$username' - \n"
+                sleep 2
+                break
+            else
+                clear
+                echo -e " - Usernames Don't Match - \n"
+            fi
+        done
+    }
 
-set_user_password() {
-    echo -e "\n - Set Password for '$1' - "
-    while :
-    do
-        passwd $1
-        if [ $? == 0 ]
-        then
-            break
-        else
-            clear
-            echo -e " - Passwords Don't Match - \n"
-        fi
-    done
+    set_user_password() {
+        echo -e "\n - Set Password for '$1' - "
+        while :
+        do
+            passwd $1 \
+                && break \
+                || { clear; echo -e " - Passwords Don't Match - \n"; } 
+        done
+    }
 }
 
 
-#----------------  System User Configuration ----------------
-clear
+#----------------  System Configuration ----------------
 
-# Use the 'set_username' function to get the system name
-echo ' - Set System Name - '
-set_username
-system_name="$username"
+{
+    clear
+    # Use the 'set_username' function to get the system name
+    echo ' - Set System Name - '
+    set_username
+    system_name="$username"
 
-echo "$system_name" > /etc/hostname
-echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
+    echo "$system_name" > /etc/hostname
+    echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
+}
 
 
 #----------------  User Configuration ----------------
-clear
 
-echo -e ' - Set Your Username - '
-set_username
-useradd -m "$username"
-clear
-set_user_password "$username"
-usermod -aG wheel,audio,video,storage "$username"
+{
+    clear
+    echo -e ' - Set Your Username - '
+    set_username
+    useradd -m "$username"
+
+    clear
+    set_user_password "$username"
+    usermod -aG wheel,audio,video,storage "$username"
+}
 
 
 #----------------  System Settings & Packages ----------------
-clear
 
-chmod u+w /etc/sudoers
-echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
-chmod u-w /etc/sudoers
+{
+    clear
 
-# Set the keyboard orientation
-echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
-echo LANG='en_US.UTF-8' > /etc/locale.conf
-export LANG=en_US.UTF-8
-locale-gen
+    chmod u+w /etc/sudoers
+    echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
+    chmod u-w /etc/sudoers
+
+    # Set the keyboard orientation
+    echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
+    echo LANG='en_US.UTF-8' > /etc/locale.conf
+    export LANG=en_US.UTF-8
+    locale-gen
+}
 
 
 #----------------  Swap File Configuration ----------------
 
-# Creating the swapfile / swap space
-fallocate -l 2G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-echo '/swapfile none swap 0 0' >> /etc/fstab
-
+{
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    echo '/swapfile none swap 0 0' >> /etc/fstab
+}
 
 #----------------  Grub Configuration ----------------
 
-uefi_enabled=$(cat uefi_state.temp)
+{
+    uefi_enabled=$(cat /uefi_state.temp)
 
-system_partition=$(cat next_open_partition.temp)
-boot_partition=$(cat boot_partition.temp)
-existing_boot_partition=$(cat existing_boot_partition.temp)
+    system_partition=$(cat /next_open_partition.temp)
+    boot_partition=$(cat /boot_partition.temp)
+    existing_boot_partition=$(cat /existing_boot_partition.temp)
 
-encrypt_system=$(cat encrypted_system.temp)
+    encrypt_system=$(cat /encrypted_system.temp)
 
-if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
-then
-    # Encryption configuration
-    echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
-    echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
-fi
-
-echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
-
-pacman -S --noconfirm linux linux-lts os-prober
-mkinitcpio --allpresets
-
-# Only install grub if a boot partition doesn't already exist
-if [[ $existing_boot_partition != True ]];
-then
-    # Actual Grub Install
-    if [ $uefi_enabled == True ]
+    if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
     then
-        pacman -Sy --noconfirm efibootmgr dosfstools mtools
-        grub-install --efi-directory=/boot
-    else
-        grub-install $boot_partition
+        # Encryption configuration
+        echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
+        echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
     fi
-fi
-grub-mkconfig -o /boot/grub/grub.cfg
 
-#----------------  Final Touches  ----------------
+    echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
+}
 
-# Enabling display and network managers
-systemctl enable NetworkManager
 
-rm encrypted_system.temp
-rm uefi_state.temp
-rm finish_install.sh
-rm next_open_partition.temp
-rm boot_partition.temp
-rm existing_boot_partition.temp
+#----------------  Cleanup & Prepare  ----------------
 
-exit
+{
+    pacman -S --noconfirm linux linux-lts os-prober
+    mkinitcpio --allpresets
+
+    # Only install grub if a boot partition doesn't already exist
+    if [[ $existing_boot_partition != True ]];
+    then
+        # Actual Grub Install
+        if [ $uefi_enabled == True ]
+        then
+            pacman -Sy --noconfirm efibootmgr dosfstools mtools
+            grub-install --efi-directory=/boot
+        else
+            grub-install $boot_partition
+        fi
+    fi
+    grub-mkconfig -o /boot/grub/grub.cfg
+
+    systemctl enable NetworkManager
+
+    rm encrypted_system.temp
+    rm uefi_state.temp
+    rm finish_install.sh
+    rm next_open_partition.temp
+    rm boot_partition.temp
+    rm existing_boot_partition.temp
+
+    exit
+}
