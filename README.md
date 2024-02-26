@@ -1,9 +1,17 @@
-# <p align='center'>MiniArch</p>
+# MiniArch
+A Minimal `x86_64` Arch Linux Installer
 
-<h3>Steps to take before running the install script</h3>
-<br>
+## WARNING
+**Dual booting with existing operating systems IS NOT supported** and existing
+boot entries will more than likely be deleted from your boot partition. However,
+after installing Arch you can use another distros installer to use the boot partition
+created by MiniArch.
 
-```python
+I hope to add this ability in the future.
+
+## Steps to take before running the install script
+
+```bash
 # Connect to a network
 #
 #  You can find your Wifi Adapter name
@@ -15,16 +23,15 @@ wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
 
-pacman -Sy git glibc --noconfirm
+pacman -Sy git --noconfirm
 # -- -- # 
 # Only run the pacman commands below if you experience key errors
-#  with the above pacman command (Run it again after running the
-#  commands below).
+#  with the above pacman command
 umount /etc/pacman.d/gnupg
 rm -rf /etc/pacman.d/gnupg
 pacman-key --init
 pacman-key --populate
-pacman -Sy archlinux-keyring --noconfirm
+pacman -Sy archlinux-keyring git --noconfirm
 # -- -- #
 
 # Clone this repo
@@ -34,3 +41,14 @@ git clone https://www.github.com/JustScott/MiniArch.git
 bash MiniArch/start_install.sh
 ```
 
+
+## Troubleshooting post installation issues (not related to MiniArch)
+
+### UEFI System unable to find newly created boot partition
+Sometimes motherboard creators only allow booting from partition with the
+label "Windows Boot Partition"
+```bash
+# `-l` as in 'Lima' (some fonts make it hard to differentiate between 
+#   uppercase I and lowercase l)
+sudo efibootmgr -c -L "Windows Boot Manager" -l "\EFI\arch\grubx64.efi"
+```
