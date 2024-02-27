@@ -23,10 +23,8 @@
     ask_set_encryption() {
         while : 
         do
-            echo -n 'Use An Encrypted System? [y/N]: '
-            read encrypt_system
-            echo -n 'Are you sure? [y/N]: '
-            read verify_encrypt
+            read -p 'Use An Encrypted System? [y/N]: ' encrypt_system
+            read -p 'Are you sure? [y/N]: ' verify_encrypt
 
             [[ $encrypt_system == $verify_encrypt ]] \
                 && break \
@@ -34,8 +32,12 @@
         done
     }
 
-    run_installation_profile() {
-        clear
+    gnome_installation_profile() {
+        mv MiniArch/profiles/minimal-gnome.sh /mnt
+        arch-chroot /mnt bash minimal-gnome.sh
+    }
+
+    get_installation_profile() {
         while true;
         do
             installation_profiles=("Minimal Gnome" "No GUI")
@@ -48,16 +50,14 @@
             done
 
             # Get the users profile choice
-            echo -en "\n\n--> "
-            read -r profile_int
+            read -p $'\n\n--> ' profile_int
 
             if [ $profile_int -gt 0 ];
             then
                 # Convert back to strings for case for better code readability
                 case ${installation_profiles[$profile_int-1]} in
                     "Minimal Gnome")
-                        mv MiniArch/profiles/minimal-gnome.sh /mnt
-                        arch-chroot /mnt bash minimal-gnome.sh
+                        install_profile=gnome_installation_profile
                         break
                         ;;
                     "No GUI")
@@ -70,9 +70,50 @@
             echo -e "\n --- Must Choose option 1 or 2 --- \n"
         done
     }
+
+    get_username() {
+        while : 
+        do
+            read -p 'Enter Username: ' username
+            read -p 'Verify Username: ' username_verify
+
+            if [[ $username == $username_verify ]]
+            then
+                clear
+                echo -e " - Set as '$username' - \n"
+                sleep 2
+                break
+            else
+                clear
+                echo -e " - Usernames Don't Match - \n"
+            fi
+        done
+    }
+
+    get_user_password() {
+        echo -e "\n - Set Password for '$1' - "
+        while :
+        do
+            read -s -p 'Set Password: ' user_password
+            read -s -p $'\nverify Password: ' user_password_verify
+
+            if [[ $user_password == $user_password_verify ]]
+            then
+                clear
+                echo -e " - Set password for $1! - \n"
+                sleep 2
+                clear
+                break
+            else
+                clear
+                echo -e " - Passwords Don't Match - \n"
+            fi 
+        done
+    }
 }
 
-#----- Assign System and Partition Information to Variables -----
+
+#----- Assign System, User, and Partition Information to Variables -----
 
 {
     pacman -Sy --noconfirm archlinux-keyring python || {
@@ -83,19 +124,44 @@
     [ -d /sys/firmware/efi/efivars ] && export uefi_enabled=true || export uefi_enabled=false
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
+    clear
+    echo -e "* Prompt [1/6] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
+    clear
+    echo -e "* Prompt [2/6] *\n"
+    echo ' - Set System Name - '
+    get_username
+    echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
+
+    clear
+    echo -e "* Prompt [3/6] *\n"
+    echo ' - Set User Name - '
+    get_username
+    echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
+
+    clear 
+    echo -e "* Prompt [4/6] *\n"
+    get_user_password "$username"
+    echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
+
     source activate_installation_variables.sh
+
+    clear
+    echo -e "* Prompt [5/6] *\n"
+    get_installation_profile
+
+    clear
+    echo -e "* Prompt [6/6] *\n"
+    ask_set_encryption
 }
 
 
 #----------------  Create and Format Partitions ---------------- 
 
 {
-    ask_set_encryption
-
     if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
     then
         # Prompt the user to enter encryption keys until they enter
@@ -159,13 +225,13 @@
         || { echo -e "\n - Failed to write to fstab - \n"; exit; } 
 
     # Run a chroot with the chosen installation profile
-    run_installation_profile
+    $install_profile
 
     # Move necessary scripts to /mnt
     mv MiniArch/finish_install.sh /mnt
     mv activate_installation_variables.sh /mnt
 
-    echo "encrypt_system=\"$encrypt_system\"" >> /mnt/activate_installation_variables.sh
+    echo -e "\nencrypt_system=\"$encrypt_system\"" >> /mnt/activate_installation_variables.sh
     
     # Create files to pass variables to fin
     # Chroot into /mnt, and run the finish_install.sh script

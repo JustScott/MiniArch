@@ -210,7 +210,6 @@ def get_disk_information(disk_labels_sizes_dict: dict) -> tuple[str,str,str]:
     format_max_size = max(map(len,disk_labels_sizes_dict.keys()))
 
     ## Ask the User which disk to write over
-    os.system('clear')
     while True:
         print(f'\n  Name  |  Free Space\n')
 
@@ -241,7 +240,7 @@ def get_disk_information(disk_labels_sizes_dict: dict) -> tuple[str,str,str]:
             quit(1)
 
         disk_label = input('\nType the name of the disk to install Arch on: ')
-   
+
         disk_labels_sizes_dict = deepcopy(new_disk_labels_sizes_dict)
         if disk_label not in disk_labels_sizes_dict:
             os.system('clear')

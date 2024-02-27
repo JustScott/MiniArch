@@ -17,55 +17,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#----------------  Defining Functions ----------------
-
-{
-    set_username() {
-        #
-        # Doesn't actually set the username, just returns it in
-        #  the variable '$username'
-        #
-        while : 
-        do
-            echo -n 'Enter Username: '
-            read username
-            echo -n 'Verify Username: '
-            read username_verify
-
-            if [[ $username == $username_verify ]]
-            then
-                clear
-                echo -e " - Set as '$username' - \n"
-                sleep 2
-                break
-            else
-                clear
-                echo -e " - Usernames Don't Match - \n"
-            fi
-        done
-    }
-
-    set_user_password() {
-        echo -e "\n - Set Password for '$1' - "
-        while :
-        do
-            passwd $1 \
-                && break \
-                || { clear; echo -e " - Passwords Don't Match - \n"; } 
-        done
-    }
-}
-
+source /activate_installation_variables.sh
 
 #----------------  System Configuration ----------------
 
 {
-    clear
-    # Use the 'set_username' function to get the system name
-    echo ' - Set System Name - '
-    set_username
-    system_name="$username"
-
     echo "$system_name" > /etc/hostname
     echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
 }
@@ -74,13 +30,10 @@
 #----------------  User Configuration ----------------
 
 {
-    clear
-    echo -e ' - Set Your Username - '
-    set_username
     useradd -m "$username"
 
     clear
-    set_user_password "$username"
+    echo "$username":"$user_password" | chpasswd
     usermod -aG wheel,audio,video,storage "$username"
 }
 
@@ -114,7 +67,6 @@
 #----------------  Grub Configuration ----------------
 
 {
-    source /activate_installation_variables.sh
 
     if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
     then
@@ -150,7 +102,7 @@
     systemctl enable NetworkManager
 
     rm /finish_install.sh
-    rm /activate_installation_variables.sh
+    shred -zu /activate_installation_variables.sh
 
     exit
 }
