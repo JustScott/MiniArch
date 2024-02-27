@@ -116,11 +116,6 @@
 #----- Assign System, User, and Partition Information to Variables -----
 
 {
-    pacman -Sy --noconfirm archlinux-keyring python || {
-        echo -e "\n - Pacman had an error (are you connected to the internet?) - \n"
-        exit 
-    } 
-
     [ -d /sys/firmware/efi/efivars ] && export uefi_enabled=true || export uefi_enabled=false
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
@@ -212,6 +207,15 @@
 #----------------  Prepare the root partition ------------------
 
 {
+    pacman -Sy --noconfirm archlinux-keyring || {
+        echo -e "\n - Pacman had an error (are you connected to the internet?) - \n"
+        exit 
+    } 
+
+    { [[ $uefi_enabled == true ]] && pacstrap /mnt efibootmgr dosfstools mtools; } || {
+        echo -e "\n - Failed to pacstrap packages into /mnt (are you connected to the internet?) - \n"
+        exit
+    }
     pacstrap /mnt \
         base linux linux-lts linux-firmware os-prober \
         xdg-user-dirs-gtk grub networkmanager sudo htop \

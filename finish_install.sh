@@ -82,7 +82,6 @@ source /activate_installation_variables.sh
 #----------------  Cleanup & Prepare  ----------------
 
 {
-    pacman -S --noconfirm linux linux-lts os-prober
     mkinitcpio --allpresets
 
     # Only install grub if a boot partition doesn't already exist
@@ -91,7 +90,6 @@ source /activate_installation_variables.sh
         # Actual Grub Install
         if [ $uefi_enabled == true ]
         then
-            pacman -Sy --noconfirm efibootmgr dosfstools mtools
             grub-install --efi-directory=/boot
         else
             grub-install $boot_partition
