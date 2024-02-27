@@ -277,15 +277,10 @@ def write_vars_to_file(
     '''
     Writes variables to files so the bash scripts can read them
     '''
-    with open("boot_partition.temp", "w") as file:
-        file.write(boot_partition)
-
-    with open('existing_boot_partition.temp', 'w') as file:
-        file.write(str(existing_boot_partition))
-
-    with open("next_open_partition.temp", 'w') as file:
-        file.write(next_open_partition)
-
+    with open("activate_installation_variables.sh", "a") as file:
+        file.write(f"\nboot_partition=\"{boot_partition}\"")
+        file.write(f"\nexisting_boot_partition={str(existing_boot_partition)}")
+        file.write(f"\nroot_partition=\"{next_open_partition}\"")
 
 def create_partition_table(
         uefi: bool, 
@@ -323,7 +318,7 @@ def create_partition_table(
 
     # If no partitions exist on this disk, create a new partition table from scratch
     if "partitions" not in partitions_dict.get("partitiontable", {}):
-        if uefi == 'True':
+        if uefi:
             table = f'''
 label: gpt
 device: /dev/{disk_label}
@@ -335,7 +330,7 @@ sector-size: 512
 {next_open_partition} : start=     1050624, size=     {root_partition_size_in_sectors}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
 '''
 
-        elif uefi == 'False':
+        elif not uefi:
             table = f'''
 label: dos
 device: /dev/{disk_label}
@@ -364,7 +359,7 @@ sector-size: 512
         next_partition_start_block = top_start_block + top_start_partition_size
 
         partition_type = "83"
-        if uefi == 'True':
+        if uefi:
             partition_type = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
 
         new_partition_entry = f"/dev/{disk_numbering}{next_open_partition} : start=     {next_partition_start_block}, size=     {root_partition_size_in_sectors}, type={partition_type}"
@@ -435,8 +430,13 @@ if __name__=="__main__":
 
     root_partition_size_in_sectors = get_partition_size(disk_size)
 
-    with open('uefi_state.temp', 'r')as file:
-        uefi = file.read().strip()
+    uefi_string = os.environ["uefi_enabled"].lower()
+    if uefi_string == 'true':
+        uefi = True
+    elif uefi_string == 'false':
+        uefi = False
+    else:
+        quit(1)
 
     next_open_partition = create_partition_table(
         uefi, 

@@ -6,12 +6,12 @@
     ask_set_encryption() {
         while : 
         do
-            echo -n 'Use An Encrypted System? [y/n]: '
+            echo -n 'Use An Encrypted System? [y/N]: '
             read encrypt_system
-            echo -n 'Are you sure? [y/n]: '
+            echo -n 'Are you sure? [y/N]: '
             read verify_encrypt
 
-            [ $encrypt_system == $verify_encrypt ] \
+            [[ $encrypt_system == $verify_encrypt ]] \
                 && break \
                 || { clear; echo -e "\n - Answers Don't Match - \n"; } 
         done
@@ -21,10 +21,7 @@
         clear
         while true;
         do
-            installation_profiles=(
-                "Minimal Gnome"
-                "No GUI"
-            )
+            installation_profiles=("Minimal Gnome" "No GUI")
 
             echo -e "\n # Choose an installation profile"
 
@@ -66,28 +63,14 @@
         exit 
     } 
 
-    [ -d /sys/firmware/efi/efivars ] && uefi_enabled=True || uefi_enabled=False
-    echo $uefi_enabled > uefi_state.temp
+    [ -d /sys/firmware/efi/efivars ] && export uefi_enabled=true || export uefi_enabled=false
+    echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
-    # Bring in variables put in files by the 'create_partition_table.py` script
-    #  exiting if any are empty
-    #
-    boot_partition=$(cat boot_partition.temp)
-    [[ -n $boot_partition ]] \
-        || { echo -e "\n - No boot partition (probably a lack of disk space) - \n"; exit; } 
-
-    existing_boot_partition=$(cat existing_boot_partition.temp)
-    [[ -n $existing_boot_partition ]] \
-        || { echo -e "\n - Something went wrong in create_partition_table.py - \n"; exit; } 
-
-    root_partition=$(cat next_open_partition.temp)
-    [[ -n $root_partition ]] \
-        || { echo -e "\n - No root partition (probably a lack of disk space) - \n"; exit; } 
-
+    source activate_installation_variables.sh
 }
 
 
@@ -96,7 +79,7 @@
 {
     ask_set_encryption
 
-    if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
+    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
     then
         # Prompt the user to enter encryption keys until they enter
         #  matching keys
@@ -130,7 +113,7 @@
     # Only create a new boot partition if one doesn't already exist
     if [[ $existing_boot_partition != True ]];
     then
-        if [[ $uefi_enabled == True ]];
+        if [[ $uefi_enabled == true ]];
         then
             echo 'y' | mkfs.fat -F 32 $boot_partition
         else
@@ -146,7 +129,6 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    # Install linux and linux-lts kernels, along with the most basic packages
     pacstrap /mnt \
         base linux linux-lts linux-firmware os-prober \
         xdg-user-dirs-gtk grub networkmanager sudo htop \
@@ -162,18 +144,15 @@
     # Run a chroot with the chosen installation profile
     run_installation_profile
 
-    # Move our final script to /mnt
+    # Move necessary scripts to /mnt
     mv MiniArch/finish_install.sh /mnt
+    mv activate_installation_variables.sh /mnt
 
-    # Create files to pass variables to finish_install.sh
-    echo $encrypt_system > /mnt/encrypted_system.temp
-    mv uefi_state.temp /mnt/
-    mv next_open_partition.temp /mnt/
-    mv boot_partition.temp /mnt/
-    mv existing_boot_partition.temp /mnt/
-
+    echo "encrypt_system=\"$encrypt_system\"" >> /mnt/activate_installation_variables.sh
+    
+    # Create files to pass variables to fin
     # Chroot into /mnt, and run the finish_install.sh script
-    arch-chroot /mnt bash finish_install.sh \
+    arch-chroot /mnt /bin/bash finish_install.sh \
         || { echo -e "\n - 'arch-chroot /mnt bash finish_install.sh' failed - \n"; exit; } 
 
     # After finish_install.sh is done

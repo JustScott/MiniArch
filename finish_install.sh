@@ -13,7 +13,7 @@
             echo -n 'Verify Username: '
             read username_verify
 
-            if [ $username == $username_verify ]
+            if [[ $username == $username_verify ]]
             then
                 clear
                 echo -e " - Set as '$username' - \n"
@@ -95,18 +95,12 @@
 #----------------  Grub Configuration ----------------
 
 {
-    uefi_enabled=$(cat /uefi_state.temp)
+    source /activate_installation_variables.sh
 
-    system_partition=$(cat /next_open_partition.temp)
-    boot_partition=$(cat /boot_partition.temp)
-    existing_boot_partition=$(cat /existing_boot_partition.temp)
-
-    encrypt_system=$(cat /encrypted_system.temp)
-
-    if [ $encrypt_system == 'y' ] || [ $encrypt_system == 'Y' ] || [ $encrypt_system == 'yes' ]
+    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
     then
         # Encryption configuration
-        echo "GRUB_CMDLINE_LINUX='cryptdevice=${system_partition}:cryptdisk'" >> /etc/default/grub
+        echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
         echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
     fi
 
@@ -124,7 +118,7 @@
     if [[ $existing_boot_partition != True ]];
     then
         # Actual Grub Install
-        if [ $uefi_enabled == True ]
+        if [ $uefi_enabled == true ]
         then
             pacman -Sy --noconfirm efibootmgr dosfstools mtools
             grub-install --efi-directory=/boot
@@ -136,12 +130,8 @@
 
     systemctl enable NetworkManager
 
-    rm encrypted_system.temp
-    rm uefi_state.temp
-    rm finish_install.sh
-    rm next_open_partition.temp
-    rm boot_partition.temp
-    rm existing_boot_partition.temp
+    rm /finish_install.sh
+    rm /activate_installation_variables.sh
 
     exit
 }
