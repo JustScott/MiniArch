@@ -1,3 +1,38 @@
+#
+# finish_install.sh - part of the MiniArch project
+# Copyright (C) 2023, Scott Wyman, development@scottwyman.me
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+import os
+
+__author__ = "Scott Wyman (development@justscott.me)"
+
+__license__ = "GPLv3"
+
+__date__ = "February 26, 2024"
+
+__all__ = []
+
+__doc__ = (
+'''
+Creates the partition table and gives the necessary partition information
+ to the rest of the bash scripts.
+'''
+)
+
 import os
 from copy import deepcopy
 import subprocess
