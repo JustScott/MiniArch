@@ -22,85 +22,136 @@ source /activate_installation_variables.sh
 #----------------  System Configuration ----------------
 
 {
-    echo "$system_name" > /etc/hostname
-    echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
+    ACTION="Set system name: '$system_name'"
+    {
+        echo "$system_name" > /etc/hostname
+        echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+
+    sleep 1
 }
 
 
 #----------------  User Configuration ----------------
 
 {
-    useradd -m "$username"
+    ACTION="Set up user: '$username'"
+    {
+        useradd -m "$username"
 
-    clear
-    echo "$username":"$user_password" | chpasswd
-    usermod -aG wheel,audio,video,storage "$username"
+        echo "$username":"$user_password" | chpasswd
+        usermod -aG wheel,audio,video,storage "$username"
+
+        chmod u+w /etc/sudoers
+        echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
+        chmod u-w /etc/sudoers
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+
+    sleep 1
 }
-
 
 #----------------  System Settings & Packages ----------------
 
 {
-    clear
+    ACTION="Configure locale"
+    {
+        # Set the keyboard orientation
+        echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
+        echo LANG='en_US.UTF-8' > /etc/locale.conf
+        export LANG=en_US.UTF-8
+        locale-gen
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
-    chmod u+w /etc/sudoers
-    echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
-    chmod u-w /etc/sudoers
-
-    # Set the keyboard orientation
-    echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
-    echo LANG='en_US.UTF-8' > /etc/locale.conf
-    export LANG=en_US.UTF-8
-    locale-gen
+    sleep 1
 }
 
 
 #----------------  Swap File Configuration ----------------
 
 {
-    fallocate -l 2G /swapfile
-    chmod 600 /swapfile
-    mkswap /swapfile
-    echo '/swapfile none swap 0 0' >> /etc/fstab
+    ACTION="Create & configure swapfile"
+    {
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        echo '/swapfile none swap 0 0' >> /etc/fstab
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+
+    sleep 1
 }
 
 #----------------  Grub Configuration ----------------
 
 {
+    ACTION="Configure Grub (with encryption if chosen)"
+    {
+        if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
+        then
+            # Encryption configuration
+            echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
+            echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
+        fi
 
-    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
-    then
-        # Encryption configuration
-        echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
-        echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
-    fi
+        echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
-    echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
+    sleep 1
 }
 
 
 #----------------  Cleanup & Prepare  ----------------
 
 {
-    mkinitcpio --allpresets
+    ACTION="Generate initial ramdisk environment"
+    echo -n "...$ACTION..."
+    mkinitcpio --allpresets >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS]" \
+        || { "[FAIL] wrote error log to /miniarcherrors.log"; exit; }
 
-    # Only install grub if a boot partition doesn't already exist
-    if [[ $existing_boot_partition != True ]];
-    then
-        # Actual Grub Install
-        if [ $uefi_enabled == true ]
+    sleep 1
+
+    ACTION="Finish Grub Installation"
+    {
+        # Only install grub if a boot partition doesn't already exist
+        if [[ $existing_boot_partition != True ]];
         then
-            grub-install --efi-directory=/boot
-        else
-            grub-install $boot_partition
+            # Actual Grub Install
+            if [ $uefi_enabled == true ]
+            then
+                grub-install --efi-directory=/boot
+            else
+                grub-install $boot_partition
+            fi
         fi
-    fi
-    grub-mkconfig -o /boot/grub/grub.cfg
+        grub-mkconfig -o /boot/grub/grub.cfg
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
-    systemctl enable NetworkManager
+    sleep 1
 
-    rm /finish_install.sh
-    shred -zu /activate_installation_variables.sh
 
-    exit
+    ACTION="Enable systemd services & delete temporary MiniArch files"
+    {
+        systemctl enable NetworkManager
+
+        rm /finish_install.sh
+        shred -zu /activate_installation_variables.sh
+    } >/dev/null 2>>/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+
+    sleep 1
 }
+    
+exit

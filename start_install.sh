@@ -151,6 +151,7 @@
     clear
     echo -e "* Prompt [6/6] *\n"
     ask_set_encryption
+    echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
 }
 
 
@@ -207,49 +208,69 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    pacman -Sy --noconfirm archlinux-keyring || {
-        echo -e "\n - Pacman had an error (are you connected to the internet?) - \n"
-        exit 
-    } 
+    clear
+    echo -e "\n - Starting Installation (no more user interaction needed) - \n"
 
-    { [[ $uefi_enabled == true ]] && pacstrap /mnt efibootmgr dosfstools mtools; } || {
-        echo -e "\n - Failed to pacstrap packages into /mnt (are you connected to the internet?) - \n"
-        exit
-    }
+    ACTION="Update the keyring"
+    echo -n "...$ACTION..."
+    pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS]" \
+        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
+
+    ACTION="Install UEFI setup tools"
+    echo -n "...$ACTION..."
+    { [[ $uefi_enabled == true ]] && pacstrap /mnt efibootmgr dosfstools mtools; } >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS]" \
+        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
+
+    ACTION="Install the kernel and base operating system packages (this may take a while)"
+    echo -n "...$ACTION..."
     pacstrap /mnt \
         base linux linux-lts linux-firmware os-prober \
         xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages || {
-            echo -e "\n - Failed to pacstrap packages into /mnt (are you connected to the internet?) - \n"
-            exit
-        } 
+        base-devel git vim man-db man-pages >/dev/null 2>>~/miniarcherrors.log \
+            && echo "[SUCCESS]" \
+            || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
-    # Tell the system where the partitions are when starting
-    genfstab -U /mnt >> /mnt/etc/fstab \
-        || { echo -e "\n - Failed to write to fstab - \n"; exit; } 
+    sleep 1
+
+    ACTION="Update fstab with new partition table"
+    genfstab -U /mnt >> /mnt/etc/fstab >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
 
     # Run a chroot with the chosen installation profile
-    $install_profile
+    ACTION="Run installation profile"
+    $install_profile >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
 
     # Move necessary scripts to /mnt
     mv MiniArch/finish_install.sh /mnt
     mv activate_installation_variables.sh /mnt
-
-    echo -e "\nencrypt_system=\"$encrypt_system\"" >> /mnt/activate_installation_variables.sh
     
     # Create files to pass variables to fin
     # Chroot into /mnt, and run the finish_install.sh script
     arch-chroot /mnt /bin/bash finish_install.sh \
         || { echo -e "\n - 'arch-chroot /mnt bash finish_install.sh' failed - \n"; exit; } 
 
-    # After finish_install.sh is done
-    umount -a
 
     clear
 
     echo -e '\n - Installation Successful! - \n'
-    echo 'Rebooting in 10 seconds...'
+    echo 'Unmounting partitions & Rebooting in 10 seconds...(hit CTRL+c to cancel)'
     sleep 10
 
+    umount -a
+    [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] \
+        && cryptsetup luksClose cryptdisk
     reboot
 }
