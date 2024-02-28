@@ -93,13 +93,11 @@ source /activate_installation_variables.sh
 {
     ACTION="Configure Grub (with encryption if chosen)"
     {
-        if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
-        then
+        [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] && {
             # Encryption configuration
             echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
             echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
-        fi
-
+        }
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
@@ -123,16 +121,12 @@ source /activate_installation_variables.sh
     ACTION="Finish Grub Installation"
     {
         # Only install grub if a boot partition doesn't already exist
-        if [[ $existing_boot_partition != True ]];
-        then
+        [[ $existing_boot_partition != True ]] && {
             # Actual Grub Install
-            if [ $uefi_enabled == true ]
-            then
-                grub-install --efi-directory=/boot
-            else
-                grub-install $boot_partition
-            fi
-        fi
+            [[ $uefi_enabled == true ]] \
+                && grub-install --efi-directory=/boot \
+                || grub-install $boot_partition
+        }
         grub-mkconfig -o /boot/grub/grub.cfg
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \

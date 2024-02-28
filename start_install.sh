@@ -52,8 +52,7 @@
             # Get the users profile choice
             read -p $'\n\n--> ' profile_int
 
-            if [ $profile_int -gt 0 ];
-            then
+            [[ $profile_int > 0 ]] && {
                 # Convert back to strings for case for better code readability
                 case ${installation_profiles[$profile_int-1]} in
                     "Minimal Gnome")
@@ -64,7 +63,7 @@
                         break
                         ;;
                 esac
-            fi
+            }
 
             clear
             echo -e "\n --- Must Choose option 1 or 2 --- \n"
@@ -77,16 +76,12 @@
             read -p 'Enter Username: ' username
             read -p 'Verify Username: ' username_verify
 
-            if [[ $username == $username_verify ]]
-            then
+            [[ $username == $username_verify ]] && {
                 clear
                 echo -e " - Set as '$username' - \n"
                 sleep 2
                 break
-            else
-                clear
-                echo -e " - Usernames Don't Match - \n"
-            fi
+            } || { clear; echo -e " - Usernames Don't Match - \n"; } 
         done
     }
 
@@ -97,17 +92,12 @@
             read -s -p 'Set Password: ' user_password
             read -s -p $'\nverify Password: ' user_password_verify
 
-            if [[ $user_password == $user_password_verify ]]
-            then
+            [[ $user_password == $user_password_verify ]] && {
                 clear
                 echo -e " - Set password for $1! - \n"
                 sleep 2
-                clear
                 break
-            else
-                clear
-                echo -e " - Passwords Don't Match - \n"
-            fi 
+            } || { clear; echo -e " - Passwords Don't Match - \n"; } 
         done
     }
 }
@@ -158,8 +148,7 @@
 #----------------  Create and Format Partitions ---------------- 
 
 {
-    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
-    then
+    [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] && {
         # Prompt the user to enter encryption keys until they enter
         #  matching keys
         clear
@@ -183,22 +172,18 @@
         # Format the root partition with ext4
         echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
         mount /dev/mapper/cryptdisk /mnt
-    else
+    } || {
         # Format the unencrypted root partition
         echo 'y' | mkfs.ext4 $root_partition
         mount $root_partition /mnt
-    fi
+    }
 
     # Only create a new boot partition if one doesn't already exist
-    if [[ $existing_boot_partition != True ]];
-    then
-        if [[ $uefi_enabled == true ]];
-        then
-            echo 'y' | mkfs.fat -F 32 $boot_partition
-        else
-            echo 'y' | mkfs.ext4 $boot_partition
-        fi
-    fi
+    [[ $existing_boot_partition != True ]] && {
+        [[ $uefi_enabled == true ]] \
+            && echo 'y' | mkfs.fat -F 32 $boot_partition \
+            || echo 'y' | mkfs.ext4 $boot_partition
+    }
 
     mkdir -p /mnt/boot
     mount $boot_partition /mnt/boot
