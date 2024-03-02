@@ -224,7 +224,7 @@
     sleep 1
 
     ACTION="Update fstab with new partition table"
-    genfstab -U /mnt >> /mnt/etc/fstab >/dev/null 2>>~/miniarcherrors.log \
+    genfstab -U /mnt >> /mnt/etc/fstab \
         && echo "[SUCCESS] $ACTION" \
         || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
 
