@@ -77,15 +77,29 @@ source /activate_installation_variables.sh
 #----------------  Swap File Configuration ----------------
 
 {
-    ACTION="Create & configure swapfile"
-    {
-        fallocate -l 2G /swapfile
-        chmod 600 /swapfile
-        mkswap /swapfile
-        echo '/swapfile none swap 0 0' >> /etc/fstab
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    ACTION="Create & configure swapfile for the '$filesystem' filesystem"
+    case $filesystem in
+        'ext4')
+            {
+                fallocate -l 2G /swapfile
+                chmod 600 /swapfile
+                mkswap /swapfile
+                echo '/swapfile none swap 0 0' >> /etc/fstab
+            } >/dev/null 2>>/miniarcherrors.log \
+                && echo "[SUCCESS] $ACTION" \
+                || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            ;;
+        'btrfs')
+            {
+                btrfs subvolume create /swap
+                btrfs filesystem mkswapfile --size 2g --uuid clear /swap/swapfile
+                swapon /swap/swapfile
+                echo '/swap/swapfile none swap defaults 0 0' >> /etc/fstab
+            } >/dev/null 2>>/miniarcherrors.log \
+                && echo "[SUCCESS] $ACTION" \
+                || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            ;;
+    esac
 
     sleep 1
 }
@@ -140,6 +154,10 @@ source /activate_installation_variables.sh
     ACTION="Enable systemd services & delete temporary MiniArch files"
     {
         systemctl enable NetworkManager
+        [[ $filesystem == 'btrfs' ]] && {
+            systemctl enable snapper-timeline
+            systemctl enable snapper-cleanup
+        }
 
         rm /finish_install.sh
         shred -zu /activate_installation_variables.sh /miniarcherrors.log
