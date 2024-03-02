@@ -254,6 +254,8 @@
     echo 'Unmounting partitions & Rebooting in 10 seconds...(hit CTRL+c to cancel)'
     sleep 10
 
+    shred -uz /mnt/miniarcherrors.log 
+
     umount -a
     [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] \
         && cryptsetup luksClose cryptdisk

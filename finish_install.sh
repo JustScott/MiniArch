@@ -140,7 +140,7 @@ source /activate_installation_variables.sh
         systemctl enable NetworkManager
 
         rm /finish_install.sh
-        shred -zu /activate_installation_variables.sh
+        shred -zu /activate_installation_variables.sh /miniarcherrors.log
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
         || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
