@@ -52,7 +52,7 @@
             # Get the users profile choice
             read -p $'\n\n--> ' profile_int
 
-            [[ $profile_int > 0 ]] && {
+            [[ $profile_int -gt 0 ]] && {
                 # Convert back to strings for case for better code readability
                 case ${installation_profiles[$profile_int-1]} in
                     "Minimal Gnome")
