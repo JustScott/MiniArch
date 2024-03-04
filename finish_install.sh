@@ -41,7 +41,9 @@ source /activate_installation_variables.sh
     {
         useradd -m "$username"
 
-        echo "$username":"$user_password" | chpasswd
+        [[ -n "$user_password" ]] \
+            && echo "$username":"$user_password" | chpasswd \
+            || passwd -d "$username"
         usermod -aG wheel,audio,video,storage "$username"
 
         chmod u+w /etc/sudoers
