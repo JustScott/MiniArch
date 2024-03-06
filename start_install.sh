@@ -169,17 +169,28 @@
 
     ACTION="Install UEFI setup tools"
     echo -n "...$ACTION..."
-    { [[ $uefi_enabled == true ]] && pacstrap /mnt efibootmgr dosfstools mtools; } >/dev/null 2>>~/miniarcherrors.log \
+    {
+    [[ $uefi_enabled == true ]] \
+        && pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log
+    } \
         && echo "[SUCCESS]" \
         || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
-    ACTION="Install the kernel and base operating system packages (this may take a while)"
+    ACTION="Install the kernel (this may take a while)"
     echo -n "...$ACTION..."
     pacstrap /mnt \
-        base linux linux-lts linux-firmware os-prober \
-        xdg-user-dirs-gtk grub networkmanager sudo htop \
+        base linux-firmware linux linux-lts >/dev/null 2>>~/miniarcherrors.log \
+            && echo "[SUCCESS]" \
+            || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
+
+    ACTION="Install base operating system packages (this may take a while)"
+    echo -n "...$ACTION..."
+    pacstrap /mnt \
+        os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
         base-devel git vim man-db man-pages >/dev/null 2>>~/miniarcherrors.log \
             && echo "[SUCCESS]" \
             || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
