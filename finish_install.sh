@@ -39,12 +39,11 @@ source /activate_installation_variables.sh
 {
     ACTION="Set up user: '$username'"
     {
-        useradd -m "$username"
+        useradd -G wheel,audio,video,storage -m "$username"
 
         [[ -n "$user_password" ]] \
             && echo "$username":"$user_password" | chpasswd \
             || passwd -d "$username"
-        usermod -aG wheel,audio,video,storage "$username"
 
         chmod u+w /etc/sudoers
         echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
