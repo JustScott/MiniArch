@@ -67,6 +67,44 @@
             } || { clear; echo -e " - Passwords Don't Match - \n"; } 
         done
     }
+
+    ask_kernel_preference() {
+        while true;
+        do
+            kernel_options=("linux" "linux-lts" "linux & linux-lts")
+
+            echo -e "\n # Which kernel(s) would you like to install?"
+
+            # Print the array elements in uniform columns
+            for ((i=1;i<${#kernel_options[@]}+1;i++)); do
+                printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
+            done
+
+            # Get the users profile choice
+            read -p $'\n\n--> ' kernel_int
+
+            [[ $kernel_int -gt 0 ]] && {
+                # Convert back to strings for case for better code readability
+                case ${kernel_options[$kernel_int-1]} in
+                    "linux")
+                        kernel="linux"
+                        break
+                        ;;
+                    "linux-lts")
+                        kernel="linux-lts"
+                        break
+                        ;;
+                    "linux & linux-lts")
+                        kernel="linux linux-lts"
+                        break
+                        ;;
+                esac
+            }
+
+            clear
+            echo -e "\n --- Must Choose option by its integer --- \n"
+        done
+    }
 }
 
 
@@ -99,10 +137,16 @@
     get_user_password "$username"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
+    # Ask user if want linux or lts or both
     clear
-    echo -e "* Prompt [5/5] *\n"
+    echo -e "* Prompt [5/6] *\n"
+    ask_kernel_preference
+
+    clear
+    echo -e "* Prompt [6/6] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
+
 
     source activate_installation_variables.sh
 }
@@ -178,10 +222,10 @@
 
     sleep 1
 
-    ACTION="Install the kernel (this may take a while)"
+    ACTION="Install the kernel(s): '$kernel' (this may take a while)"
     echo -n "...$ACTION..."
     pacstrap /mnt \
-        base linux-firmware linux linux-lts >/dev/null 2>>~/miniarcherrors.log \
+        base linux-firmware $kernel >/dev/null 2>>~/miniarcherrors.log \
             && echo "[SUCCESS]" \
             || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
@@ -212,7 +256,6 @@
     # Chroot into /mnt, and run the finish_install.sh script
     arch-chroot /mnt /bin/bash finish_install.sh \
         || { echo -e "\n - 'arch-chroot /mnt bash finish_install.sh' failed - \n"; exit; } 
-
 
     clear
 
