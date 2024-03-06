@@ -37,39 +37,6 @@
         arch-chroot /mnt bash minimal-gnome.sh
     }
 
-    get_installation_profile() {
-        while true;
-        do
-            installation_profiles=("Minimal Gnome" "No GUI")
-
-            echo -e "\n # Choose an installation profile"
-
-            # Print the array elements in uniform columns
-            for ((i=1;i<${#installation_profiles[@]}+1;i++)); do
-                printf "\n %-2s  %-15s" "$i." "${installation_profiles[$i-1]}"
-            done
-
-            # Get the users profile choice
-            read -p $'\n\n--> ' profile_int
-
-            [[ $profile_int -gt 0 ]] && {
-                # Convert back to strings for case for better code readability
-                case ${installation_profiles[$profile_int-1]} in
-                    "Minimal Gnome")
-                        install_profile=gnome_installation_profile
-                        break
-                        ;;
-                    "No GUI")
-                        break
-                        ;;
-                esac
-            }
-
-            clear
-            echo -e "\n --- Must Choose option 1 or 2 --- \n"
-        done
-    }
-
     get_username() {
         while : 
         do
@@ -110,38 +77,34 @@
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [1/6] *\n"
+    echo -e "* Prompt [1/5] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
     clear
-    echo -e "* Prompt [2/6] *\n"
+    echo -e "* Prompt [2/5] *\n"
     echo ' - Set System Name - '
     get_username
     echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [3/6] *\n"
+    echo -e "* Prompt [3/5] *\n"
     echo ' - Set User Name - '
     get_username
     echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
 
     clear 
-    echo -e "* Prompt [4/6] *\n"
+    echo -e "* Prompt [4/5] *\n"
     get_user_password "$username"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
-    source activate_installation_variables.sh
-
     clear
-    echo -e "* Prompt [5/6] *\n"
-    get_installation_profile
-
-    clear
-    echo -e "* Prompt [6/6] *\n"
+    echo -e "* Prompt [5/5] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
+
+    source activate_installation_variables.sh
 }
 
 
@@ -225,14 +188,6 @@
 
     ACTION="Update fstab with new partition table"
     genfstab -U /mnt >> /mnt/etc/fstab \
-        && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
-
-    sleep 1
-
-    # Run a chroot with the chosen installation profile
-    ACTION="Run installation profile"
-    $install_profile >/dev/null 2>>~/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
         || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
 
