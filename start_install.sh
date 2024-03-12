@@ -150,7 +150,7 @@
     pacman -Sy --noconfirm archlinux-keyring python arch-install-scripts \
         >/dev/null 2>>~/miniarcherrors.log \
         && echo "[SUCCESS]" \
-        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+        || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -240,7 +240,7 @@
                 mount $fs_device /mnt
             }>/dev/null 2>>~/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
             ;;
         "btrfs")
             ACTION="Install btrfs-progs packages"
@@ -248,7 +248,7 @@
             pacman -Sy --noconfirm btrfs-progs \
                 >/dev/null 2>>~/miniarcherrors.log \
                 && echo "[SUCCESS]" \
-                || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
             {
                 echo 'y' | mkfs.btrfs -f $fs_device
                 mount $fs_device /mnt
@@ -266,10 +266,10 @@
                 mount $fs_device -o subvolid=257 /mnt/home
             }>/dev/null 2>>~/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
             ;;
         *)
-            "[FAIL] $ACTION... no filesystem chosen"
+            "echo [FAIL] $ACTION... no filesystem chosen"
             exit
             ;;
     esac
@@ -282,7 +282,7 @@
             || echo 'y' | mkfs.ext4 $boot_partition
     } >/dev/null 2>>~/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
 
     mkdir -p /mnt/boot
     mount $boot_partition /mnt/boot
@@ -295,11 +295,9 @@
     ACTION="Install UEFI setup tools"
     echo -n "...$ACTION..."
     {
-    [[ $uefi_enabled == true ]] \
-        && pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log
-    } \
-        && echo "[SUCCESS]" \
-        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+        [[ $uefi_enabled == true ]] \
+            && pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log
+    } && echo "[SUCCESS]" || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -308,7 +306,7 @@
         echo -n "...$ACTION..."
         pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>~/miniarcherrors.log \
                 && echo "[SUCCESS]" \
-                || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
     }
 
     sleep 1
@@ -318,7 +316,7 @@
     pacstrap /mnt \
         base linux-firmware $kernel >/dev/null 2>>~/miniarcherrors.log \
             && echo "[SUCCESS]" \
-            || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -328,14 +326,14 @@
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
         base-devel git vim man-db man-pages >/dev/null 2>>~/miniarcherrors.log \
             && echo "[SUCCESS]" \
-            || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
     ACTION="Update fstab with new partition table"
     genfstab -U /mnt >> /mnt/etc/fstab \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 

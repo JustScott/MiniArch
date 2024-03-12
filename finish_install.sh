@@ -28,7 +28,7 @@ source /activate_installation_variables.sh
         echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 }
@@ -50,7 +50,7 @@ source /activate_installation_variables.sh
         chmod u-w /etc/sudoers
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 }
@@ -67,7 +67,7 @@ source /activate_installation_variables.sh
         locale-gen
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 }
@@ -86,7 +86,7 @@ source /activate_installation_variables.sh
                 echo '/swapfile none swap 0 0' >> /etc/fstab
             } >/dev/null 2>>/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
             ;;
         'btrfs')
             {
@@ -96,7 +96,7 @@ source /activate_installation_variables.sh
                 echo '/swap/swapfile none swap defaults 0 0' >> /etc/fstab
             } >/dev/null 2>>/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
             ;;
     esac
 
@@ -116,7 +116,7 @@ source /activate_installation_variables.sh
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 }
@@ -129,7 +129,7 @@ source /activate_installation_variables.sh
     echo -n "...$ACTION..."
     mkinitcpio --allpresets >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS]" \
-        || { "[FAIL] wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -145,7 +145,7 @@ source /activate_installation_variables.sh
         grub-mkconfig -o /boot/grub/grub.cfg
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -162,7 +162,7 @@ source /activate_installation_variables.sh
         shred -zu /activate_installation_variables.sh /miniarcherrors.log
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
 
     sleep 1
 }
