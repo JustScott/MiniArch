@@ -243,6 +243,12 @@
                 || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
             ;;
         "btrfs")
+            ACTION="Install btrfs-progs packages"
+            echo -n "...$ACTION..."
+            pacman -Sy --noconfirm btrfs-progs \
+                >/dev/null 2>>~/miniarcherrors.log \
+                && echo "[SUCCESS]" \
+                || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
             {
                 echo 'y' | mkfs.btrfs -f $fs_device
                 mount $fs_device /mnt
