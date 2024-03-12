@@ -145,6 +145,14 @@
 #----- Assign System, User, and Partition Information to Variables -----
 
 {
+    ACTION="Update the keyring & install python"
+    echo -n "...$ACTION..."
+    pacman -Sy --noconfirm archlinux-keyring python >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS]" \
+        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
+
     [ -d /sys/firmware/efi/efivars ] && export uefi_enabled=true || export uefi_enabled=false
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
@@ -277,14 +285,6 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    ACTION="Update the keyring"
-    echo -n "...$ACTION..."
-    pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>>~/miniarcherrors.log \
-        && echo "[SUCCESS]" \
-        || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
-
-    sleep 1
-
     ACTION="Install UEFI setup tools"
     echo -n "...$ACTION..."
     {
