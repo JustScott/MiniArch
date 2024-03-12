@@ -147,7 +147,8 @@
 {
     ACTION="Update the keyring & install python"
     echo -n "...$ACTION..."
-    pacman -Sy --noconfirm archlinux-keyring python >/dev/null 2>>~/miniarcherrors.log \
+    pacman -Sy --noconfirm archlinux-keyring python arch-install-scripts \
+        >/dev/null 2>>~/miniarcherrors.log \
         && echo "[SUCCESS]" \
         || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
