@@ -37,6 +37,40 @@
         arch-chroot /mnt bash minimal-gnome.sh
     }
 
+    get_filesystem_type() {
+        while true;
+        do
+            filesystem_options=("ext4" "btrfs")
+
+            echo -e "\n # Choose a filesystem type (if you're not sure, choose ext4)"
+
+            # Print the array elements in uniform columns
+            for ((i=1;i<${#filesystem_options[@]}+1;i++)); do
+                printf "\n %-2s  %-15s" "$i." "${filesystem_options[$i-1]}"
+            done
+
+            # Get the users profile choice
+            read -p $'\n\n--> ' filesystem_int
+
+            [[ $filesystem_int -gt 0 ]] && {
+                # Convert back to strings for case for better code readability
+                case ${filesystem_options[$filesystem_int-1]} in
+                    "ext4")
+                        filesystem="ext4"
+                        break
+                        ;;
+                    "btrfs")
+                        filesystem="btrfs"
+                        break
+                        ;;
+                esac
+            }
+
+            clear
+            echo -e "\n --- Must Choose option by its integer --- \n"
+        done
+    }
+
     get_username() {
         while : 
         do
@@ -115,35 +149,40 @@
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [1/5] *\n"
+    echo -e "* Prompt [1/7] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
     clear
-    echo -e "* Prompt [2/5] *\n"
+    echo -e "* Prompt [2/7] *\n"
     echo ' - Set System Name - '
     get_username
     echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [3/5] *\n"
+    echo -e "* Prompt [3/7] *\n"
     echo ' - Set User Name - '
     get_username
     echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
 
     clear 
-    echo -e "* Prompt [4/5] *\n"
+    echo -e "* Prompt [4/7] *\n"
     get_user_password "$username"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
     # Ask user if want linux or lts or both
     clear
-    echo -e "* Prompt [5/6] *\n"
+    echo -e "* Prompt [5/7] *\n"
     ask_kernel_preference
 
     clear
-    echo -e "* Prompt [6/6] *\n"
+    echo -e "* Prompt [6/7] *\n"
+    get_filesystem_type
+    echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
+
+    clear
+    echo -e "* Prompt [7/7] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
 
@@ -155,6 +194,7 @@
 #----------------  Create and Format Partitions ---------------- 
 
 {
+    fs_device="$root_partition"
     [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] && {
         # Prompt the user to enter encryption keys until they enter
         #  matching keys
@@ -176,21 +216,58 @@
 
         done
 
-        # Format the root partition with ext4
-        echo 'y' | mkfs.ext4 /dev/mapper/cryptdisk
-        mount /dev/mapper/cryptdisk /mnt
-    } || {
-        # Format the unencrypted root partition
-        echo 'y' | mkfs.ext4 $root_partition
-        mount $root_partition /mnt
+        fs_device="/dev/mapper/cryptdisk"
     }
 
+    clear
+
+    echo -e "\n - Starting Installation (no more user interaction needed) - \n"
+
+    ACTION="Create Filesystem: '$filesystem'"
+    case $filesystem in
+        "ext4")
+            {
+                echo 'y' | mkfs.ext4 $fs_device
+                mount $fs_device /mnt
+            }>/dev/null 2>>~/miniarcherrors.log \
+                && echo "[SUCCESS] $ACTION" \
+                || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+            ;;
+        "btrfs")
+            {
+                echo 'y' | mkfs.btrfs -f $fs_device
+                mount $fs_device /mnt
+
+                btrfs subvolume create /mnt/@
+                btrfs subvolume create /mnt/@home
+
+
+                umount /mnt
+
+                # 256 is /mnt/@
+                mount $fs_device -o subvolid=256 /mnt
+                mkdir -p /mnt/home
+                # 257 is /mnt/@home
+                mount $fs_device -o subvolid=257 /mnt/home
+            }>/dev/null 2>>~/miniarcherrors.log \
+                && echo "[SUCCESS] $ACTION" \
+                || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+            ;;
+        *)
+            "[FAIL] $ACTION... no filesystem chosen"
+            exit
+            ;;
+    esac
+
+    ACTION="Format boot partition"
     # Only create a new boot partition if one doesn't already exist
     [[ $existing_boot_partition != True ]] && {
         [[ $uefi_enabled == true ]] \
             && echo 'y' | mkfs.fat -F 32 $boot_partition \
             || echo 'y' | mkfs.ext4 $boot_partition
-    }
+    } >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS] $ACTION" \
+        || { "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
 
     mkdir -p /mnt/boot
     mount $boot_partition /mnt/boot
@@ -200,9 +277,6 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    clear
-    echo -e "\n - Starting Installation (no more user interaction needed) - \n"
-
     ACTION="Update the keyring"
     echo -n "...$ACTION..."
     pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>>~/miniarcherrors.log \
@@ -219,6 +293,16 @@
     } \
         && echo "[SUCCESS]" \
         || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+
+    sleep 1
+
+    [[ $filesystem == "btrfs" ]] && {
+        ACTION="Install btrfs related packages"
+        echo -n "...$ACTION..."
+        pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>~/miniarcherrors.log \
+                && echo "[SUCCESS]" \
+                || { "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+    }
 
     sleep 1
 
