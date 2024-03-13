@@ -145,7 +145,7 @@
 #----- Assign System, User, and Partition Information to Variables -----
 
 {
-    ACTION="Update the keyring & install python"
+    ACTION="Update the keyring & install necessary packages"
     echo -n "...$ACTION..."
     pacman -Sy --noconfirm archlinux-keyring python arch-install-scripts \
         >/dev/null 2>>~/miniarcherrors.log \
@@ -292,12 +292,13 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    ACTION="Install UEFI setup tools"
-    echo -n "...$ACTION..."
-    {
-        [[ $uefi_enabled == true ]] \
-            && pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log
-    } && echo "[SUCCESS]" || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+    [[ $uefi_enabled == true ]] && {
+        ACTION="Install UEFI setup tools"
+        echo -n "...$ACTION..."
+        pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log \
+            && echo "[SUCCESS]" \
+            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+    }
 
     sleep 1
 
