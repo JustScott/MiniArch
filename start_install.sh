@@ -32,11 +32,6 @@
         done
     }
 
-    gnome_installation_profile() {
-        mv MiniArch/profiles/minimal-gnome.sh /mnt
-        arch-chroot /mnt bash minimal-gnome.sh
-    }
-
     get_filesystem_type() {
         while true;
         do
@@ -116,7 +111,8 @@
                 exit
             }
 
-            echo -e "\n # Which kernel(s) would you like to install?"
+            echo -e "\n # Enter an integer or a valid kernel name"
+            echo " (can pass a custom kernel not show below)"
 
             # Print the array elements in uniform columns
             for ((i=1;i<${#kernel_options[@]}+1;i++)); do
@@ -125,6 +121,15 @@
 
             # Get the users profile choice
             read -p $'\n\n--> ' kernel_int
+
+            pacman -Q $kernel_int &>/dev/null && {
+                read -p $"ARE YOU SURE you want to use the $kernel_int kernel? [y/N]: " kernel_confirmation
+
+                [[ $kernel_confirmation == "y" || $kernel_confirmation == "Y" || $kernel_confirmation == "yes" ]] && {
+                    kernel=$kernel_int
+                    break
+                }
+            } 
 
             [[ $kernel_int -gt 0 ]] && {
                 # Convert back to strings for case for better code readability
@@ -145,7 +150,7 @@
             }
 
             clear
-            echo -e "\n --- Must Choose option by its integer --- \n"
+            echo -e "\n --- Must choose an integer or type a kernel name --- \n"
         done
     }
 }
