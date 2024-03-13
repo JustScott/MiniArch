@@ -168,8 +168,15 @@
 
     sleep 1
 
-    [ -d /sys/firmware/efi/efivars ] && export uefi_enabled=true || export uefi_enabled=false
+    { 
+        [[ -d /sys/firmware/efi/efivars ]] || {
+            modprobe efivars &>/dev/null || modprobe efivarfs &>/dev/null
+        }
+    } && export uefi_enabled=true || export uefi_enabled=false
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
+    echo echo "EFI System: '$uefi_enabled'"
+
+    sleep 2
 
     clear
     echo -e "* Prompt [1/7] *\n"
