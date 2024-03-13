@@ -105,7 +105,16 @@
     ask_kernel_preference() {
         while true;
         do
-            kernel_options=("linux" "linux-lts" "linux & linux-lts")
+            kernel_options=()
+            
+            pacman -Q linux &>/dev/null && kernel_options+=("linux")
+            pacman -Q linux-lts &>/dev/null && kernel_options+=("linux-lts")
+            pacman -Q linux linux-lts &>/dev/null && kernel_options+=("linux & linux-lts")
+
+            [[ ${#kernel_options[@]} == 0 ]] && { 
+                echo "[FAIL] pacman can't find the linux or linux-lts kernels"
+                exit
+            }
 
             echo -e "\n # Which kernel(s) would you like to install?"
 
