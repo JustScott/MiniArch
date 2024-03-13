@@ -106,18 +106,15 @@
             pacman -Q linux-lts &>/dev/null && kernel_options+=("linux-lts")
             pacman -Q linux linux-lts &>/dev/null && kernel_options+=("linux & linux-lts")
 
-            [[ ${#kernel_options[@]} == 0 ]] && { 
-                echo "[FAIL] pacman can't find the linux or linux-lts kernels"
-                exit
-            }
-
             echo -e "\n # Enter an integer or a valid kernel name"
             echo " (can pass a custom kernel not show below)"
 
-            # Print the array elements in uniform columns
-            for ((i=1;i<${#kernel_options[@]}+1;i++)); do
-                printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
-            done
+            [[ ${#kernel_options[@]} == 0 ]] || { 
+                # Print the array elements in uniform columns
+                for ((i=1;i<${#kernel_options[@]}+1;i++)); do
+                    printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
+                done
+            } && echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
 
             # Get the users profile choice
             read -p $'\n\n--> ' kernel_int
