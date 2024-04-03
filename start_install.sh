@@ -102,24 +102,24 @@
         do
             kernel_options=()
             
-            pacman -Q linux &>/dev/null && kernel_options+=("linux")
-            pacman -Q linux-lts &>/dev/null && kernel_options+=("linux-lts")
-            pacman -Q linux linux-lts &>/dev/null && kernel_options+=("linux & linux-lts")
+            pacman -Si linux &>/dev/null && kernel_options+=("linux")
+            pacman -Si linux-lts &>/dev/null && kernel_options+=("linux-lts")
+            pacman -Si linux linux-lts &>/dev/null && kernel_options+=("linux & linux-lts")
 
             echo -e "\n # Enter an integer or a valid kernel name"
             echo " (can pass a custom kernel not show below)"
 
-            [[ ${#kernel_options[@]} == 0 ]] || { 
+            [[ ${#kernel_options[@]} -gt 0 ]] && { 
                 # Print the array elements in uniform columns
                 for ((i=1;i<${#kernel_options[@]}+1;i++)); do
                     printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
                 done
-            } && echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
+            } || echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
 
             # Get the users profile choice
             read -p $'\n\n--> ' kernel_int
 
-            pacman -Q $kernel_int &>/dev/null && {
+            pacman -Si $kernel_int &>/dev/null && {
                 read -p $"ARE YOU SURE you want to use the $kernel_int kernel? [y/N]: " kernel_confirmation
 
                 [[ $kernel_confirmation == "y" || $kernel_confirmation == "Y" || $kernel_confirmation == "yes" ]] && {
@@ -171,7 +171,6 @@
         }
     } && export uefi_enabled=true || export uefi_enabled=false
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
-    echo echo "EFI System: '$uefi_enabled'"
 
     sleep 2
 
