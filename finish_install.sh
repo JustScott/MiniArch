@@ -41,9 +41,10 @@ source /activate_installation_variables.sh
     {
         useradd -G wheel,audio,video,storage -m "$username"
 
-        [[ -n "$user_password" ]] \
-            && echo "$username":"$user_password" | chpasswd \
-            || passwd -d "$username"
+        if [[ -n "$user_password" ]]
+            then echo "$username":"$user_password" | chpasswd \
+            else passwd -d "$username"
+        fi
 
         chmod u+w /etc/sudoers
         echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
@@ -136,12 +137,20 @@ source /activate_installation_variables.sh
     ACTION="Finish Grub Installation"
     {
         # Only install grub if a boot partition doesn't already exist
-        [[ $existing_boot_partition != True ]] && {
+        if [[ $existing_boot_partition != True ]]
+        then
             # Actual Grub Install
-            [[ $uefi_enabled == true ]] \
-                && grub-install --efi-directory=/boot \
-                || grub-install $boot_partition
-        }
+            if [[ $uefi_enabled == true ]]
+            then
+                grub-install --efi-directory=/boot \
+                    && echo "[SUCCESS] $ACTION" \
+                    || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            else
+                grub-install $boot_partition \
+                    && echo "[SUCCESS] $ACTION" \
+                    || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            fi
+        fi
         grub-mkconfig -o /boot/grub/grub.cfg
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \

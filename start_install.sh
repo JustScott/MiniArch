@@ -26,9 +26,10 @@
             read -p 'Use An Encrypted System? [y/N]: ' encrypt_system
             read -p 'Are you sure? [y/N]: ' verify_encrypt
 
-            [[ $encrypt_system == $verify_encrypt ]] \
-                && break \
-                || { clear; echo -e "\n - Answers Don't Match - \n"; } 
+            if [[ $encrypt_system == $verify_encrypt ]]
+                then break
+                else { clear; echo -e "\n - Answers Don't Match - \n"; } 
+            fi
         done
     }
 
@@ -72,12 +73,16 @@
             read -p 'Enter Username: ' username
             read -p 'Verify Username: ' username_verify
 
-            [[ $username == $username_verify ]] && {
+            if [[ $username == $username_verify ]]
+            then
                 clear
                 echo -e " - Set as '$username' - \n"
                 sleep 2
                 break
-            } || { clear; echo -e " - Usernames Don't Match - \n"; } 
+            else 
+                clear
+                echo -e " - Usernames Don't Match - \n"
+            fi
         done
     }
 
@@ -88,12 +93,16 @@
             read -s -p 'Set Password: ' user_password
             read -s -p $'\nverify Password: ' user_password_verify
 
-            [[ $user_password == $user_password_verify ]] && {
+            if [[ $user_password == $user_password_verify ]]
+            then
                 clear
                 echo -e " - Set password for $1! - \n"
                 sleep 2
                 break
-            } || { clear; echo -e " - Passwords Don't Match - \n"; } 
+            else
+                clear
+                echo -e " - Passwords Don't Match - \n"
+            fi
         done
     }
 
@@ -109,24 +118,28 @@
             echo -e "\n # Enter an integer or a valid kernel name"
             echo " (can pass a custom kernel not show below)"
 
-            [[ ${#kernel_options[@]} -gt 0 ]] && { 
+            if [[ ${#kernel_options[@]} -gt 0 ]]
+            then
                 # Print the array elements in uniform columns
                 for ((i=1;i<${#kernel_options[@]}+1;i++)); do
                     printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
                 done
-            } || echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
+            else
+                echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
+            fi
 
             # Get the users profile choice
             read -p $'\n\n--> ' kernel_int
 
-            pacman -Si $kernel_int &>/dev/null && {
+            if pacman -Si $kernel_int &>/dev/null
+            then
                 read -p $"ARE YOU SURE you want to use the $kernel_int kernel? [y/N]: " kernel_confirmation
 
                 [[ $kernel_confirmation == "y" || $kernel_confirmation == "Y" || $kernel_confirmation == "yes" ]] && {
                     kernel=$kernel_int
                     break
                 }
-            } 
+            fi
 
             [[ $kernel_int -gt 0 ]] && {
                 # Convert back to strings for case for better code readability
@@ -165,11 +178,11 @@
 
     sleep 1
 
-    { 
-        [[ -d /sys/firmware/efi/efivars ]] || {
-            modprobe efivars &>/dev/null || modprobe efivarfs &>/dev/null
-        }
-    } && export uefi_enabled=true || export uefi_enabled=false
+    if [[ -d /sys/firmware/efi/efivars ]]; then
+        if modprobe efivars &>/dev/null || modprobe efivarfs &>/dev/null; then
+            export uefi_enabled=true || export uefi_enabled=false
+        fi
+    fi
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
 
     sleep 2
@@ -221,7 +234,8 @@
 
 {
     fs_device="$root_partition"
-    [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] && {
+    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
+    then
         # Prompt the user to enter encryption keys until they enter
         #  matching keys
         clear
@@ -243,13 +257,13 @@
         done
 
         fs_device="/dev/mapper/cryptdisk"
-    }
+    fi
 
     clear
 
     echo -e "\n - Starting Installation (no more user interaction needed) - \n"
 
-    ACTION="Create Filesystem: '$filesystem'"
+    ACTION="Use Filesystem: '$filesystem'"
     case $filesystem in
         "ext4")
             {
@@ -273,7 +287,6 @@
                 btrfs subvolume create /mnt/@
                 btrfs subvolume create /mnt/@home
 
-
                 umount /mnt
 
                 # 256 is /mnt/@
@@ -293,13 +306,21 @@
 
     ACTION="Format boot partition"
     # Only create a new boot partition if one doesn't already exist
-    [[ $existing_boot_partition != True ]] && {
-        [[ $uefi_enabled == true ]] \
-            && echo 'y' | mkfs.fat -F 32 $boot_partition \
-            || echo 'y' | mkfs.ext4 $boot_partition
-    } >/dev/null 2>>~/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+    if [[ $existing_boot_partition != True ]]
+    then
+        {
+            if [[ $uefi_enabled == true ]]
+            then 
+                echo 'y' | mkfs.fat -F 32 $boot_partition >/dev/null 2>>~/miniarcherrors.log \
+                    && echo "[SUCCESS] $ACTION" \
+                    || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+            else 
+                echo 'y' | mkfs.ext4 $boot_partition >/dev/null 2>>~/miniarcherrors.log \
+                    && echo "[SUCCESS] $ACTION" \
+                    || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+            fi
+        } 
+    fi 
 
     mkdir -p /mnt/boot
     mount $boot_partition /mnt/boot
@@ -309,32 +330,33 @@
 #----------------  Prepare the root partition ------------------
 
 {
-    [[ $uefi_enabled == true ]] && {
+    if [[ $uefi_enabled == true ]]
+    then
         ACTION="Install UEFI setup tools"
         echo -n "...$ACTION..."
         pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log \
             && echo "[SUCCESS]" \
             || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
-    }
+    fi
 
     sleep 1
 
-    [[ $filesystem == "btrfs" ]] && {
+    if [[ $filesystem == "btrfs" ]]
+    then
         ACTION="Install btrfs related packages"
         echo -n "...$ACTION..."
         pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>~/miniarcherrors.log \
                 && echo "[SUCCESS]" \
                 || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
-    }
+    fi
 
     sleep 1
 
     ACTION="Install the kernel(s): '$kernel' (this may take a while)"
     echo -n "...$ACTION..."
-    pacstrap /mnt \
-        base linux-firmware $kernel >/dev/null 2>>~/miniarcherrors.log \
-            && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+    pacstrap /mnt base linux-firmware $kernel >/dev/null 2>>~/miniarcherrors.log \
+        && echo "[SUCCESS]" \
+        || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
