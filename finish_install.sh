@@ -74,10 +74,10 @@ source /activate_installation_variables.sh
 
     sleep 1
 
-    if [[ -n $user_timezone ]]
+    if [[ -n "$user_timezone" ]]
     then
         ACTION="Set timezone"
-        timedatectl set-timezone $user_timezone >/dev/null 2>>/miniarcherrors.log \
+        ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >/dev/null 2>>/miniarcherrors.log \
             && echo "[SUCCESS] $ACTION" \
             || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
     fi
