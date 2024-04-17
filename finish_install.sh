@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # finish_install.sh - part of the MiniArch project
-# Copyright (C) 2023, Scott Wyman, development@justscott.me
+# Copyright (C) 2024, JustScott, development@justscott.me
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -42,8 +42,10 @@ source /activate_installation_variables.sh
         useradd -G wheel,audio,video,storage -m "$username"
 
         if [[ -n "$user_password" ]]
-            then echo "$username":"$user_password" | chpasswd \
-            else passwd -d "$username"
+        then 
+            echo "$username":"$user_password" | chpasswd
+        else 
+            passwd -d "$username"
         fi
 
         chmod u+w /etc/sudoers
@@ -69,6 +71,16 @@ source /activate_installation_variables.sh
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
         || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+
+    sleep 1
+
+    if [[ -n $user_timezone ]]
+    then
+        ACTION="Set timezone"
+        timedatectl set-timezone $user_timezone >/dev/null 2>>/miniarcherrors.log \
+            && echo "[SUCCESS] $ACTION" \
+            || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    fi
 
     sleep 1
 }
@@ -162,11 +174,6 @@ source /activate_installation_variables.sh
     ACTION="Enable systemd services & delete temporary MiniArch files"
     {
         systemctl enable NetworkManager
-        [[ $filesystem == 'btrfs' ]] && {
-            systemctl enable snapper-timeline
-            systemctl enable snapper-cleanup
-        }
-
         rm /finish_install.sh
         shred -zu /activate_installation_variables.sh /miniarcherrors.log
     } >/dev/null 2>>/miniarcherrors.log \

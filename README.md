@@ -41,6 +41,11 @@ git clone https://www.github.com/JustScott/MiniArch.git
 bash MiniArch/start_install.sh
 ```
 
+## Development
+Testing is done in Virtual Machines to simulate a real environment. If you're
+ using QEMU for virtualization, you can cd into the `tests` directory and run
+ `make test` to automatically create a fresh Virtual Machine for testing. 
+
 
 ## Troubleshooting post installation issues (not related to MiniArch)
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # start_install.sh - part of the MiniArch project
-# Copyright (C) 2023, Scott Wyman, development@justscott.me
+# Copyright (C) 2024, JustScott, development@justscott.me
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -171,10 +171,10 @@
 {
     ACTION="Update the keyring & install necessary packages"
     echo -n "...$ACTION..."
-    pacman -Sy --noconfirm archlinux-keyring python arch-install-scripts \
+    pacman -Sy --noconfirm fzf archlinux-keyring python arch-install-scripts \
         >/dev/null 2>>~/miniarcherrors.log \
-        && echo "[SUCCESS]" \
-        || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            && echo "[SUCCESS]" \
+            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -188,40 +188,46 @@
     sleep 2
 
     clear
-    echo -e "* Prompt [1/7] *\n"
+    echo -e "* Prompt [1/8] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
     clear
-    echo -e "* Prompt [2/7] *\n"
+    echo -e "* Prompt [2/8] *\n"
     echo ' - Set System Name - '
     get_username
     echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [3/7] *\n"
+    echo -e "* Prompt [3/8] *\n"
     echo ' - Set User Name - '
     get_username
     echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
 
     clear 
-    echo -e "* Prompt [4/7] *\n"
+    echo -e "* Prompt [4/8] *\n"
     get_user_password "$username"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
+    clear
+    echo -e "* Prompt [5/8] *\n"
+    echo -e "Choose your timezone (start typing to narrow down choices):"
+    user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
+    echo -e "\nuser_timezone=\"$user_timezone\"" >> activate_installation_variables.sh
+
     # Ask user if want linux or lts or both
     clear
-    echo -e "* Prompt [5/7] *\n"
+    echo -e "* Prompt [6/8] *\n"
     ask_kernel_preference
 
     clear
-    echo -e "* Prompt [6/7] *\n"
+    echo -e "* Prompt [7/8] *\n"
     get_filesystem_type
     echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [7/7] *\n"
+    echo -e "* Prompt [8/8] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
 
@@ -378,7 +384,7 @@
     sleep 1
 
     # Move necessary scripts to /mnt
-    mv MiniArch/finish_install.sh /mnt
+    cp MiniArch/finish_install.sh /mnt
     mv activate_installation_variables.sh /mnt
     
     # Create files to pass variables to fin

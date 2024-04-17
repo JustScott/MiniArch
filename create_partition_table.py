@@ -1,6 +1,6 @@
 #
-# finish_install.sh - part of the MiniArch project
-# Copyright (C) 2023, Scott Wyman, development@scottwyman.me
+# create_partition_table.py - part of the MiniArch project
+# Copyright (C) 2024, JustScott, development@justscott.me
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
