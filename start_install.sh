@@ -188,46 +188,53 @@
     sleep 2
 
     clear
-    echo -e "* Prompt [1/8] *\n"
+    echo -e "* Prompt [1/9] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
     clear
-    echo -e "* Prompt [2/8] *\n"
+    echo -e "* Prompt [2/9] *\n"
     echo ' - Set System Name - '
     get_username
     echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [3/8] *\n"
+    echo -e "* Prompt [3/9] *\n"
     echo ' - Set User Name - '
     get_username
     echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
 
     clear 
-    echo -e "* Prompt [4/8] *\n"
+    echo -e "* Prompt [4/9] *\n"
     get_user_password "$username"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [5/8] *\n"
+    echo -e "* Prompt [5/9] *\n"
     echo -e "Choose your timezone (start typing to narrow down choices):"
     user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
     echo -e "\nuser_timezone=\"$user_timezone\"" >> activate_installation_variables.sh
 
+    clear
+    echo -e "* Prompt [6/9] *\n"
+    echo -e "Choose your locale (press <esc> to use 'en_US.UTF-8 UTF-8' (recommended) ):"
+    user_locale="$(cat /usr/share/i18n/SUPPORTED | fzf --reverse --height=90%)"
+    [[ $? != 0 ]] && user_locale='en_US.UTF-8 UTF-8'
+    echo -e "\nuser_locale=\"$user_locale\"" >> activate_installation_variables.sh
+
     # Ask user if want linux or lts or both
     clear
-    echo -e "* Prompt [6/8] *\n"
+    echo -e "* Prompt [7/9] *\n"
     ask_kernel_preference
 
     clear
-    echo -e "* Prompt [7/8] *\n"
+    echo -e "* Prompt [8/9] *\n"
     get_filesystem_type
     echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [8/8] *\n"
+    echo -e "* Prompt [9/9] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
 

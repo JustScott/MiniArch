@@ -61,12 +61,12 @@ source /activate_installation_variables.sh
 #----------------  System Settings & Packages ----------------
 
 {
-    ACTION="Configure locale"
+    ACTION="Configure locale: '$user_locale'"
     {
         # Set the keyboard orientation
-        echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
-        echo LANG='en_US.UTF-8' > /etc/locale.conf
-        export LANG=en_US.UTF-8
+        echo $user_locale >> /etc/locale.gen
+        export LANG="$(echo $user_local | awk '{print $1}' )"
+        echo LANG="$LANG" > /etc/locale.conf
         locale-gen
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
@@ -76,7 +76,7 @@ source /activate_installation_variables.sh
 
     if [[ -n "$user_timezone" ]]
     then
-        ACTION="Set timezone"
+        ACTION="Set timezone: '$user_timezone'"
         ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >/dev/null 2>>/miniarcherrors.log \
             && echo "[SUCCESS] $ACTION" \
             || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
