@@ -67,21 +67,28 @@
         done
     }
 
-    get_username() {
+    get_name() {
         while : 
         do
-            read -p 'Enter Username: ' username
-            read -p 'Verify Username: ' username_verify
+            read -p 'Enter Name: ' name
+            read -p 'Verify Name: ' name_verify
 
-            if [[ $username == $username_verify ]]
+            if [[ -z "$name" ]]
             then
                 clear
-                echo -e " - Set as '$username' - \n"
+                echo -e " - Name Can't Be Empty - \n"
+                continue
+            fi
+
+            if [[ $name == $name_verify ]]
+            then
+                clear
+                echo -e " - Set as '$name' - \n"
                 sleep 2
                 break
             else 
                 clear
-                echo -e " - Usernames Don't Match - \n"
+                echo -e " - Names Don't Match - \n"
             fi
         done
     }
@@ -196,18 +203,18 @@
     clear
     echo -e "* Prompt [2/9] *\n"
     echo ' - Set System Name - '
-    get_username
-    echo -e "\nsystem_name=\"$username\"" >> activate_installation_variables.sh
+    get_name
+    echo -e "\nsystem_name=\"$name\"" >> activate_installation_variables.sh
 
     clear
     echo -e "* Prompt [3/9] *\n"
     echo ' - Set User Name - '
-    get_username
-    echo -e "\nusername=\"$username\"" >> activate_installation_variables.sh
+    get_name
+    echo -e "\nusername=\"$name\"" >> activate_installation_variables.sh
 
     clear 
     echo -e "* Prompt [4/9] *\n"
-    get_user_password "$username"
+    get_user_password "$name"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
     clear

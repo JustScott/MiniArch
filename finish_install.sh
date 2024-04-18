@@ -65,8 +65,8 @@ source /activate_installation_variables.sh
     {
         # Set the keyboard orientation
         echo $user_locale >> /etc/locale.gen
-        export LANG="$(echo $user_local | awk '{print $1}' )"
-        echo LANG="$LANG" > /etc/locale.conf
+        export LANG="$(echo $user_local | awk '{print $1}')"
+        echo "LANG='$LANG'" > /etc/locale.conf
         locale-gen
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \

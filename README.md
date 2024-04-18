@@ -23,6 +23,8 @@ wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
 
+pacman-key --init
+pacman-key --populate
 pacman -Sy git --noconfirm
 # -- -- # 
 # Only run the pacman commands below if you experience key errors
