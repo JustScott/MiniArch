@@ -28,3 +28,6 @@ create_vm: update_iso
 
 delete_vm:
 	@bash scripts/delete_vm.sh ${VM_NAME}
+
+clean:
+	rm /tmp/miniarcherrors.log

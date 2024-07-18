@@ -33,6 +33,20 @@
         done
     }
 
+    ask_removable() {
+        while : 
+        do
+            read -p 'Will this system be removable (Installed on a USB drive, for example)? [y/N]: ' removable
+            read -p 'Are you sure? [y/N]: ' verify_removable
+
+            if [[ $removable == $verify_removable ]]
+                removable_flag="--removable"
+                then break
+                else { clear; echo -e "\n - Answers Don't Match - \n"; } 
+            fi
+        done
+    }
+
     get_filesystem_type() {
         while true;
         do
@@ -138,7 +152,7 @@
             # Get the users profile choice
             read -p $'\n\n--> ' kernel_int
 
-            if pacman -Si $kernel_int &>/dev/null
+            if [[ $(pacman -Si $kernel_int &>/dev/null) && -n $kernel_int ]]
             then
                 read -p $"ARE YOU SURE you want to use the $kernel_int kernel? [y/N]: " kernel_confirmation
 
@@ -195,36 +209,36 @@
     sleep 2
 
     clear
-    echo -e "* Prompt [1/9] *\n"
+    echo -e "* Prompt [1/10] *\n"
     # Run python script, exit if the script returns an error code
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
     clear
-    echo -e "* Prompt [2/9] *\n"
+    echo -e "* Prompt [2/10] *\n"
     echo ' - Set System Name - '
     get_name
     echo -e "\nsystem_name=\"$name\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [3/9] *\n"
+    echo -e "* Prompt [3/10] *\n"
     echo ' - Set User Name - '
     get_name
     echo -e "\nusername=\"$name\"" >> activate_installation_variables.sh
 
     clear 
-    echo -e "* Prompt [4/9] *\n"
+    echo -e "* Prompt [4/10] *\n"
     get_user_password "$name"
     echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [5/9] *\n"
+    echo -e "* Prompt [5/10] *\n"
     echo -e "Choose your timezone (start typing to narrow down choices):"
     user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
     echo -e "\nuser_timezone=\"$user_timezone\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [6/9] *\n"
+    echo -e "* Prompt [6/10] *\n"
     echo -e "Choose your locale (press <esc> to use 'en_US.UTF-8 UTF-8' (recommended) ):"
     user_locale="$(cat /usr/share/i18n/SUPPORTED | fzf --reverse --height=90%)"
     [[ $? != 0 ]] && user_locale='en_US.UTF-8 UTF-8'
@@ -232,19 +246,23 @@
 
     # Ask user if want linux or lts or both
     clear
-    echo -e "* Prompt [7/9] *\n"
+    echo -e "* Prompt [7/10] *\n"
     ask_kernel_preference
 
     clear
-    echo -e "* Prompt [8/9] *\n"
+    echo -e "* Prompt [8/10] *\n"
     get_filesystem_type
     echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
 
     clear
-    echo -e "* Prompt [9/9] *\n"
+    echo -e "* Prompt [9/10] *\n"
+    ask_removable
+    echo -e "\nremovable_flag=\"$removable_flag\"" >> activate_installation_variables.sh
+
+    clear
+    echo -e "* Prompt [10/10] *\n"
     ask_set_encryption
     echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
-
 
     source activate_installation_variables.sh
 }

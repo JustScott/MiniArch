@@ -154,7 +154,7 @@ source /activate_installation_variables.sh
             # Actual Grub Install
             if [[ $uefi_enabled == true ]]
             then
-                grub-install --efi-directory=/boot \
+                grub-install --efi-directory=/boot $removable_flag \
                     && echo "[SUCCESS] $ACTION" \
                     || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
             else
