@@ -21,6 +21,7 @@
 
 {
     ask_set_encryption() {
+        declare -g encrypt_system=""
         local encrypt verify_encrypt
 
         while : 
@@ -51,6 +52,7 @@
     }
 
     ask_removable() {
+        declare -g removable_flag=""
         local removable verify_removable
 
         while : 
@@ -65,7 +67,6 @@
                         return 0
                     ;;
                     ""|"n"|"N"|"no"|"NO")
-                        unset removable_flag
                         return 0
                     ;;
                     *)
@@ -82,6 +83,7 @@
     }
 
     get_filesystem_type() {
+        declare -g filesystem=""
         local OPTION
 
         echo -e "\n\e[1mChoose a filesystem type (if you're not sure, choose ext4):\e[0m\n"
@@ -99,6 +101,7 @@
     }
 
     get_name() {
+        declare -g name=""
         local name_verify
 
         while : 
@@ -127,6 +130,7 @@
     }
 
     get_user_password() {
+        declare -g user_password=""
         local user_password_verify
 
         echo -e "\n - Set Password for '$1' - "
@@ -149,6 +153,7 @@
     }
 
     ask_kernel_preference() {
+        declare -g kernel=""
         local OPTION kernel_options all_packages \
             chosen_custom_kernel kernel_confirmation
 
@@ -232,16 +237,30 @@ fi
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
+    source activate_installation_variables.sh
+    if [[ -z "$root_partition" ]]; then
+        echo -e "\n - [ERROR] Failed to get the root partition, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
+
     clear
     echo -e "* Prompt [2/10] *\n"
     echo ' - Set System Name - '
     get_name
+    if [[ -z "$name" ]]; then
+        echo -e "\n - [ERROR] Failed to get a system name, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
     echo -e "\nsystem_name=\"$name\"" >> activate_installation_variables.sh
 
     clear
     echo -e "* Prompt [3/10] *\n"
     echo ' - Set User Name - '
     get_name
+    if [[ -z "$name" ]]; then
+        echo -e "\n - [ERROR] Failed to get a user name, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
     echo -e "\nusername=\"$name\"" >> activate_installation_variables.sh
 
     clear 
@@ -259,16 +278,24 @@ fi
     echo -e "* Prompt [6/10] *\n"
     echo -e "Choose your locale (press <esc> to use 'en_US.UTF-8 UTF-8' (recommended) ):"
     user_locale="$(cat /usr/share/i18n/SUPPORTED | fzf --reverse --height=90%)"
-    [[ $? != 0 ]] && user_locale='en_US.UTF-8 UTF-8'
+    [[ -z "$user_locale" ]] && user_locale='en_US.UTF-8 UTF-8'
     echo -e "\nuser_locale=\"$user_locale\"" >> activate_installation_variables.sh
 
     clear
     echo -e "* Prompt [7/10] *\n"
     ask_kernel_preference
+    if [[ -z "$kernel" ]]; then
+        echo -e "\n - [ERROR] Failed to get a kernel, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
 
     clear
     echo -e "* Prompt [8/10] *\n"
     get_filesystem_type
+    if [[ -z "$filesystem" ]]; then
+        echo -e "\n - [ERROR] Failed to get a filesystem type, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
     echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
 
     clear
@@ -279,9 +306,11 @@ fi
     clear
     echo -e "* Prompt [10/10] *\n"
     ask_set_encryption
+    if [[ -z "$encrypt_system" ]]; then
+        echo -e "\n - [ERROR] Failed to get user's choice on encrypting the system, this shouldn't happen... stopping - \n"
+        exit 1
+    fi
     echo -e "\nencrypt_system=$encrypt_system" >> activate_installation_variables.sh
-
-    source activate_installation_variables.sh
 }
 
 
