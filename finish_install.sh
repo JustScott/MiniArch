@@ -121,11 +121,11 @@ source /activate_installation_variables.sh
 {
     ACTION="Configure Grub (with encryption if chosen)"
     {
-        [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] && {
+        if [[ "$encrypt_system" == true ]]; then
             # Encryption configuration
             echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
             echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
-        }
+        fi
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
     } >/dev/null 2>>/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \

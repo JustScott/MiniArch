@@ -11,6 +11,10 @@ I hope to add this ability in the future.
 
 ## Steps to take before running the install script
 
+MiniArch can only operate on empty diskspace, as in, you must first make
+space on your disk with something like `cfdisk` before running `start_install.sh`
+otherwise it won't be recognized.
+
 ```bash
 # Connect to a network
 #
@@ -25,7 +29,7 @@ wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
 pacman-key --init
 pacman-key --populate
-pacman -Sy git --noconfirm
+pacman -Sy --noconfirm git
 # -- -- # 
 # Only run the pacman commands below if you experience key errors
 #  with the above pacman command

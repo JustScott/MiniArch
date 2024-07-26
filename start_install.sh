@@ -21,67 +21,86 @@
 
 {
     ask_set_encryption() {
+        local encrypt verify_encrypt
+
         while : 
         do
-            read -p 'Use An Encrypted System? [y/N]: ' encrypt_system
+            read -p 'Use An Encrypted System? [y/N]: ' encrypt
             read -p 'Are you sure? [y/N]: ' verify_encrypt
 
-            if [[ $encrypt_system == $verify_encrypt ]]
-                then break
-                else { clear; echo -e "\n - Answers Don't Match - \n"; } 
+            if [[ $encrypt == $verify_encrypt ]]; then
+                case $encrypt in
+                    "y"|"Y"|"yes"|"YES")
+                        encrypt_system=true
+                        return 0
+                    ;;
+                    ""|"n"|"N"|"no"|"NO")
+                        encrypt_system=false
+                        return 0
+                    ;;
+                    *)
+                        echo -e "\n - Invalid response... possible responses are: y|Y|yes|YES|n|N|no|NO - \n"
+                        continue
+                    ;;
+                esac
+            else
+                clear
+                echo -e "\n - Answers Don't Match - \n"
             fi
         done
     }
 
     ask_removable() {
+        local removable verify_removable
+
         while : 
         do
             read -p 'Will this system be removable (Installed on a USB drive, for example)? [y/N]: ' removable
             read -p 'Are you sure? [y/N]: ' verify_removable
 
-            if [[ $removable == $verify_removable ]]
-                removable_flag="--removable"
-                then break
-                else { clear; echo -e "\n - Answers Don't Match - \n"; } 
+            if [[ $removable == $verify_removable ]]; then
+                case $removable in
+                    "y"|"Y"|"yes"|"YES")
+                        removable_flag="--removable"
+                        return 0
+                    ;;
+                    ""|"n"|"N"|"no"|"NO")
+                        unset removable_flag
+                        return 0
+                    ;;
+                    *)
+                        echo -e "\n - Invalid response... possible responses are: y|Y|yes|YES|n|N|no|NO - \n"
+                        continue
+                    ;;
+                esac
+
+            else
+                clear
+                echo -e "\n - Answers Don't Match - \n"
             fi
         done
     }
 
     get_filesystem_type() {
-        while true;
-        do
-            filesystem_options=("ext4" "btrfs")
+        local OPTION
 
-            echo -e "\n # Choose a filesystem type (if you're not sure, choose ext4)"
-
-            # Print the array elements in uniform columns
-            for ((i=1;i<${#filesystem_options[@]}+1;i++)); do
-                printf "\n %-2s  %-15s" "$i." "${filesystem_options[$i-1]}"
-            done
-
-            # Get the users profile choice
-            read -p $'\n\n--> ' filesystem_int
-
-            [[ $filesystem_int -gt 0 ]] && {
-                # Convert back to strings for case for better code readability
-                case ${filesystem_options[$filesystem_int-1]} in
-                    "ext4")
-                        filesystem="ext4"
-                        break
-                        ;;
-                    "btrfs")
-                        filesystem="btrfs"
-                        break
-                        ;;
-                esac
-            }
-
-            clear
-            echo -e "\n --- Must Choose option by its integer --- \n"
+        echo -e "\n\e[1mChoose a filesystem type (if you're not sure, choose ext4):\e[0m\n"
+        select OPTION in "ext4" "btrfs"; do
+            case $OPTION in
+                "ext4"|"btrfs")
+                    filesystem="$OPTION"
+                    break
+                ;;
+                *)
+                    echo "Not an option, try again..."
+                ;;
+            esac
         done
     }
 
     get_name() {
+        local name_verify
+
         while : 
         do
             read -p 'Enter Name: ' name
@@ -108,6 +127,8 @@
     }
 
     get_user_password() {
+        local user_password_verify
+
         echo -e "\n - Set Password for '$1' - "
         while :
         do
@@ -128,60 +149,50 @@
     }
 
     ask_kernel_preference() {
-        while true;
-        do
-            kernel_options=()
-            
-            pacman -Si linux &>/dev/null && kernel_options+=("linux")
-            pacman -Si linux-lts &>/dev/null && kernel_options+=("linux-lts")
-            pacman -Si linux linux-lts &>/dev/null && kernel_options+=("linux & linux-lts")
+        local OPTION kernel_options all_packages \
+            chosen_custom_kernel kernel_confirmation
 
-            echo -e "\n # Enter an integer or a valid kernel name"
-            echo " (can pass a custom kernel not show below)"
+        kernel_options=()
+                
+        all_packages="$(pacman -Slq)"
 
-            if [[ ${#kernel_options[@]} -gt 0 ]]
-            then
-                # Print the array elements in uniform columns
-                for ((i=1;i<${#kernel_options[@]}+1;i++)); do
-                    printf "\n %-2s  %-15s" "$i." "${kernel_options[$i-1]}"
-                done
-            else
-                echo -e "\n - Couldn't find a valid kernel... either enter a custom kernel, or quit with CTRL+c - "
-            fi
+        echo "$all_packages" | grep -x "linux" &>/dev/null && kernel_options+=("linux")
+        echo "$all_packages" | grep -x "linux-lts" &>/dev/null && kernel_options+=("linux-lts")
+        echo "${kernel_options[@]}" | grep "linux " | grep "linux-lts" &>/dev/null \
+            && kernel_options+=("linux+linux-lts")
 
-            # Get the users profile choice
-            read -p $'\n\n--> ' kernel_int
-
-            if [[ $(pacman -Si $kernel_int &>/dev/null) && -n $kernel_int ]]
-            then
-                read -p $"ARE YOU SURE you want to use the $kernel_int kernel? [y/N]: " kernel_confirmation
-
-                [[ $kernel_confirmation == "y" || $kernel_confirmation == "Y" || $kernel_confirmation == "yes" ]] && {
-                    kernel=$kernel_int
+        echo -e "\n\e[1mEnter an integer or a valid kernel name (can pass a custom kernel not show below):\e[0m\n"
+        select OPTION in ${kernel_options[@]} "choose custom"; do
+            case $OPTION in
+                "linux"|"linux-lts")
+                    kernel="$OPTION"
                     break
-                }
-            fi
+                ;;
+                "linux+linux-lts")
+                    kernel="linux linux-lts"
+                    break
+                ;;
+                "choose custom")
+                    chosen_custom_kernel=$(echo "$all_packages" | fzf --reverse)
+                    clear
 
-            [[ $kernel_int -gt 0 ]] && {
-                # Convert back to strings for case for better code readability
-                case ${kernel_options[$kernel_int-1]} in
-                    "linux")
-                        kernel="linux"
-                        break
-                        ;;
-                    "linux-lts")
-                        kernel="linux-lts"
-                        break
-                        ;;
-                    "linux & linux-lts")
-                        kernel="linux linux-lts"
-                        break
-                        ;;
-                esac
-            }
+                    [[ -z "$chosen_custom_kernel" ]] && continue
 
-            clear
-            echo -e "\n --- Must choose an integer or type a kernel name --- \n"
+                    read -p $"Are you sure '$chosen_custom_kernel' is a kernel? [y/N]: " kernel_confirmation
+                    case $kernel_confirmation in
+                        "y"|"Y"|"yes"|"YES")
+                            kernel="$chosen_custom_kernel"
+                            break
+                        ;;
+                        *)
+                            continue
+                        ;;
+                    esac
+                ;;
+                *)
+                    echo "Can only choose a number that correlates with one of the options..."
+                ;;
+            esac
         done
     }
 }
@@ -189,13 +200,20 @@
 
 #----- Assign System, User, and Partition Information to Variables -----
 
+
+if ! pacman -Syy >/dev/null 2>>$HOME/miniarcherrors.log; then
+    echo -e "\n - Pacmans having trouble synchronizing its repositories\n"
+    echo -e "    + Wrote the error log to $HOME/miniarcherrors.log\n"
+    exit 1
+fi
+
 {
     ACTION="Update the keyring & install necessary packages"
     echo -n "...$ACTION..."
-    pacman -Sy --noconfirm fzf archlinux-keyring python arch-install-scripts \
-        >/dev/null 2>>~/miniarcherrors.log \
+    pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \
+        >/dev/null 2>>$HOME/miniarcherrors.log \
             && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -244,7 +262,6 @@
     [[ $? != 0 ]] && user_locale='en_US.UTF-8 UTF-8'
     echo -e "\nuser_locale=\"$user_locale\"" >> activate_installation_variables.sh
 
-    # Ask user if want linux or lts or both
     clear
     echo -e "* Prompt [7/10] *\n"
     ask_kernel_preference
@@ -262,7 +279,7 @@
     clear
     echo -e "* Prompt [10/10] *\n"
     ask_set_encryption
-    echo -e "\nencrypt_system=\"$encrypt_system\"" >> activate_installation_variables.sh
+    echo -e "\nencrypt_system=$encrypt_system" >> activate_installation_variables.sh
 
     source activate_installation_variables.sh
 }
@@ -272,8 +289,7 @@
 
 {
     fs_device="$root_partition"
-    if [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]]
-    then
+    if [[ "$encrypt_system" == true ]]; then
         # Prompt the user to enter encryption keys until they enter
         #  matching keys
         clear
@@ -288,9 +304,12 @@
         #  they enter the correct one
         while :
         do
-            cryptsetup open $root_partition cryptdisk \
-                && break \
-                || { clear; echo -e " - Try Again - \n"; } 
+            if cryptsetup open $root_partition cryptdisk; then
+                break
+            else
+                clear
+                echo -e " - Wrong Key, Try Again - \n" 
+            fi
 
         done
 
@@ -307,17 +326,17 @@
             {
                 echo 'y' | mkfs.ext4 $fs_device
                 mount $fs_device /mnt
-            }>/dev/null 2>>~/miniarcherrors.log \
+            }>/dev/null 2>>$HOME/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
             ;;
         "btrfs")
             ACTION="Install btrfs-progs packages"
             echo -n "...$ACTION..."
-            pacman -Sy --noconfirm btrfs-progs \
-                >/dev/null 2>>~/miniarcherrors.log \
+            pacman -S --noconfirm btrfs-progs \
+                >/dev/null 2>>$HOME/miniarcherrors.log \
                 && echo "[SUCCESS]" \
-                || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
             {
                 echo 'y' | mkfs.btrfs -f $fs_device
                 mount $fs_device /mnt
@@ -332,9 +351,9 @@
                 mkdir -p /mnt/home
                 # 257 is /mnt/@home
                 mount $fs_device -o subvolid=257 /mnt/home
-            }>/dev/null 2>>~/miniarcherrors.log \
+            }>/dev/null 2>>$HOME/miniarcherrors.log \
                 && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
             ;;
         *)
             "echo [FAIL] $ACTION... no filesystem chosen"
@@ -349,13 +368,13 @@
         {
             if [[ $uefi_enabled == true ]]
             then 
-                echo 'y' | mkfs.fat -F 32 $boot_partition >/dev/null 2>>~/miniarcherrors.log \
+                echo 'y' | mkfs.fat -F 32 $boot_partition >/dev/null 2>>$HOME/miniarcherrors.log \
                     && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                    || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
             else 
-                echo 'y' | mkfs.ext4 $boot_partition >/dev/null 2>>~/miniarcherrors.log \
+                echo 'y' | mkfs.ext4 $boot_partition >/dev/null 2>>$HOME/miniarcherrors.log \
                     && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+                    || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
             fi
         } 
     fi 
@@ -372,9 +391,9 @@
     then
         ACTION="Install UEFI setup tools"
         echo -n "...$ACTION..."
-        pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>~/miniarcherrors.log \
+        pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>$HOME/miniarcherrors.log \
             && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
     fi
 
     sleep 1
@@ -383,18 +402,18 @@
     then
         ACTION="Install btrfs related packages"
         echo -n "...$ACTION..."
-        pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>~/miniarcherrors.log \
+        pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>$HOME/miniarcherrors.log \
                 && echo "[SUCCESS]" \
-                || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+                || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
     fi
 
     sleep 1
 
     ACTION="Install the kernel(s): '$kernel' (this may take a while)"
     echo -n "...$ACTION..."
-    pacstrap /mnt base linux-firmware $kernel >/dev/null 2>>~/miniarcherrors.log \
+    pacstrap /mnt base linux-firmware $kernel >/dev/null 2>>$HOME/miniarcherrors.log \
         && echo "[SUCCESS]" \
-        || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+        || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -402,16 +421,16 @@
     echo -n "...$ACTION..."
     pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages >/dev/null 2>>~/miniarcherrors.log \
+        base-devel git vim man-db man-pages >/dev/null 2>>$HOME/miniarcherrors.log \
             && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to ~/miniarcherrors.log"; exit; }
+            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
 
     sleep 1
 
     ACTION="Update fstab with new partition table"
-    genfstab -U /mnt >> /mnt/etc/fstab \
+    genfstab -U /mnt >> /mnt/etc/fstab 2>>$HOME/miniarcherrors.log \
         && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to ~/miniarcherrors.log"; exit; }
+        || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
 
     sleep 1
 
@@ -432,8 +451,10 @@
 
     shred -uz /mnt/miniarcherrors.log 
 
+    umount /mnt/boot
+    umount /mnt
+    [[ $encrypt_system == true ]] && cryptsetup luksClose cryptdisk
     umount -a
-    [[ $encrypt_system == "y" || $encrypt_system == "Y" || $encrypt_system == "yes" ]] \
-        && cryptsetup luksClose cryptdisk
+
     reboot
 }
