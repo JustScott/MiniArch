@@ -19,7 +19,8 @@
 VM_NAME="$1"
 ISO_FILE="archlinux-x86_64.iso"
 
-VM_NAME="MiniArchTestingVM"
+#         \
+
 if ! virsh list --all | grep "$VM_NAME" &>/dev/null
 then
     echo "...Create Virtual Machine: '$VM_NAME'..."
@@ -27,13 +28,16 @@ then
         --name $VM_NAME \
         --memory 1024 \
         --vcpus 1 \
+        --disk size=20,format=qcow2 \
         --cdrom $ISO_FILE \
-        --disk size=12,format=qcow2 \
         --boot uefi \
-        --graphics spice \
+        --graphics none \
         --os-variant=archlinux \
         --network user \
         --rng /dev/urandom >/dev/null 2>>/tmp/miniarcherrors.log \
+        --console pty,target_type=serial \
+        --location $ISO_FILE,kernel=arch/boot/x86_64/vmlinuz-linux,initrd=arch/boot/x86_64/initramfs-linux.img \
+        --extra-args 'console=ttyS0,115200n8 serial' \
             || { 
                 echo "[FAIL] cant create VM... wrote error log to /tmp/miniarcherrors.log"
                 exit 1

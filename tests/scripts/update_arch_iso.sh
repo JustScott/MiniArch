@@ -21,7 +21,6 @@ ISO_FILE="archlinux-x86_64.iso"
 
 SHA256_URL="https://mirror.arizona.edu/archlinux/iso/latest/sha256sums.txt"
 
-
 if sha256sum -c --ignore-missing <(curl -sL $SHA256_URL) &>/dev/null
 then
     echo "ISO up-to-date!"

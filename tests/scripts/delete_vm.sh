@@ -27,7 +27,7 @@ then
         --snapshots-metadata \
         --checkpoints-metadata \
         --nvram \
-        --remove-all-storage \
+        --storage $HOME/.local/share/libvirt/images/$VM_NAME.qcow2 \
         --tpm >/dev/null 2>>/tmp/miniarcherrors.log \
             && echo "Deleted old Virtual Machine!" \
             || { 
