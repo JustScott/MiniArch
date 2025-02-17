@@ -18,17 +18,21 @@
 
 
 source /activate_installation_variables.sh
+source /root/MiniArch/shared_lib
+
+STDOUT_LOG="/dev/null"
+STDERR_LOG="$HOME/miniarcherrors.log"
+
 
 #----------------  System Configuration ----------------
 
 {
-    ACTION="Set system name: '$system_name'"
     {
         echo "$system_name" > /etc/hostname
         echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Set system name: '$system_name'"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 }
@@ -37,7 +41,6 @@ source /activate_installation_variables.sh
 #----------------  User Configuration ----------------
 
 {
-    ACTION="Set up user: '$username'"
     {
         useradd -G wheel,audio,video,storage -m "$username"
 
@@ -51,9 +54,9 @@ source /activate_installation_variables.sh
         chmod u+w /etc/sudoers
         echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
         chmod u-w /etc/sudoers
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Set up user: '$username'"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 }
@@ -61,25 +64,23 @@ source /activate_installation_variables.sh
 #----------------  System Settings & Packages ----------------
 
 {
-    ACTION="Configure locale: '$user_locale'"
     {
         # Set the keyboard orientation
         echo $user_locale >> /etc/locale.gen
         export LANG="$(echo $user_locale | awk '{print $1}')"
         echo "LANG=$LANG" > /etc/locale.conf
         locale-gen
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Configure locale: '$user_locale'"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
     if [[ -n "$user_timezone" ]]
     then
-        ACTION="Set timezone: '$user_timezone'"
-        ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >/dev/null 2>>/miniarcherrors.log \
-            && echo "[SUCCESS] $ACTION" \
-            || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+        ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+        task_output $! "$STDERR_LOG" "Set timezone: '$user_timezone'"
+        [[ $? -ne 0 ]] && exit 1
     fi
 
     sleep 1
@@ -89,7 +90,6 @@ source /activate_installation_variables.sh
 #----------------  Swap File Configuration ----------------
 
 {
-    ACTION="Create & configure swapfile for the '$filesystem' filesystem"
     case $filesystem in
         'ext4')
             {
@@ -97,9 +97,9 @@ source /activate_installation_variables.sh
                 chmod 600 /swapfile
                 mkswap /swapfile
                 echo '/swapfile none swap 0 0' >> /etc/fstab
-            } >/dev/null 2>>/miniarcherrors.log \
-                && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Create & configure swapfile for the '$filesystem' filesystem"
+            [[ $? -ne 0 ]] && exit 1
             ;;
         'btrfs')
             {
@@ -107,9 +107,9 @@ source /activate_installation_variables.sh
                 btrfs filesystem mkswapfile --size 2g --uuid clear /swap/swapfile
                 swapon /swap/swapfile
                 echo '/swap/swapfile none swap defaults 0 0' >> /etc/fstab
-            } >/dev/null 2>>/miniarcherrors.log \
-                && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+            } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Create & configure swapfile for the '$filesystem' filesystem"
+            [[ $? -ne 0 ]] && exit 1
             ;;
     esac
 
@@ -119,7 +119,6 @@ source /activate_installation_variables.sh
 #----------------  Grub Configuration ----------------
 
 {
-    ACTION="Configure Grub (with encryption if chosen)"
     {
         if [[ "$encrypt_system" == true ]]; then
             # Encryption configuration
@@ -127,9 +126,9 @@ source /activate_installation_variables.sh
             echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
         fi
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Configure Grub (with encryption if chosen)"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 }
@@ -138,47 +137,42 @@ source /activate_installation_variables.sh
 #----------------  Cleanup & Prepare  ----------------
 
 {
-    ACTION="Generate initial ramdisk environment"
-    echo -n "...$ACTION..."
-    mkinitcpio --allpresets >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS]" \
-        || { echo "[FAIL] wrote error log to /miniarcherrors.log"; exit; }
+    mkinitcpio --allpresets >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Generate initial ramdisk environment"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
-    ACTION="Finish Grub Installation"
-    {
-        # Only install grub if a boot partition doesn't already exist
-        if [[ $existing_boot_partition != True ]]
+    # Only install grub if a boot partition doesn't already exist
+    if [[ $existing_boot_partition != True ]]
+    then
+        # Actual Grub Install
+        if [[ $uefi_enabled == true ]]
         then
-            # Actual Grub Install
-            if [[ $uefi_enabled == true ]]
-            then
-                grub-install --efi-directory=/boot $removable_flag \
-                    && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
-            else
-                grub-install $boot_partition \
-                    && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
-            fi
+            grub-install --efi-directory=/boot $removable_flag >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "EFI Grub Install"
+            [[ $? -ne 0 ]] && exit 1
+        else
+            grub-install $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Normal Grub Install"
+            [[ $? -ne 0 ]] && exit 1
         fi
-        grub-mkconfig -o /boot/grub/grub.cfg
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    fi
+
+    grub-mkconfig -o /boot/grub/grub.cfg >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Make grub config"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
 
-    ACTION="Enable systemd services & delete temporary MiniArch files"
     {
         systemctl enable NetworkManager
         rm /finish_install.sh
         shred -zu /activate_installation_variables.sh /miniarcherrors.log
-    } >/dev/null 2>>/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to /miniarcherrors.log"; exit; }
+    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Enable systemd services & delete temporary MiniArch files"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 }

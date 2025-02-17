@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+source /root/MiniArch/shared_lib
+
+STDOUT_LOG="/dev/null"
+STDERR_LOG="$HOME/miniarcherrors.log"
 
 #----------------  Defining Functions ----------------
 
@@ -205,20 +209,17 @@
 
 #----- Assign System, User, and Partition Information to Variables -----
 
+sudo -v
 
-if ! pacman -Syy >/dev/null 2>>$HOME/miniarcherrors.log; then
-    echo -e "\n - Pacmans having trouble synchronizing its repositories\n"
-    echo -e "    + Wrote the error log to $HOME/miniarcherrors.log\n"
-    exit 1
-fi
+pacman -Syy >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+task_output $! "$STDERR_LOG" "Update pacmans database"
+[[ $? -ne 0 ]] && exit 1
 
 {
-    ACTION="Update the keyring & install necessary packages"
-    echo -n "...$ACTION..."
     pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \
-        >/dev/null 2>>$HOME/miniarcherrors.log \
-            && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+        >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Update the keyring & install necessary packages"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
@@ -349,23 +350,19 @@ fi
 
     echo -e "\n - Starting Installation (no more user interaction needed) - \n"
 
-    ACTION="Use Filesystem: '$filesystem'"
     case $filesystem in
         "ext4")
             {
                 echo 'y' | mkfs.ext4 $fs_device
                 mount $fs_device /mnt
-            }>/dev/null 2>>$HOME/miniarcherrors.log \
-                && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
+            }>"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Configure System For EXT4"
+            [[ $? -ne 0 ]] && exit 1
             ;;
         "btrfs")
-            ACTION="Install btrfs-progs packages"
-            echo -n "...$ACTION..."
-            pacman -S --noconfirm btrfs-progs \
-                >/dev/null 2>>$HOME/miniarcherrors.log \
-                && echo "[SUCCESS]" \
-                || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+            pacman -S --noconfirm btrfs-progs >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Download BTRFS Packages"
+            [[ $? -ne 0 ]] && exit 1
             {
                 echo 'y' | mkfs.btrfs -f $fs_device
                 mount $fs_device /mnt
@@ -380,30 +377,29 @@ fi
                 mkdir -p /mnt/home
                 # 257 is /mnt/@home
                 mount $fs_device -o subvolid=257 /mnt/home
-            }>/dev/null 2>>$HOME/miniarcherrors.log \
-                && echo "[SUCCESS] $ACTION" \
-                || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
+            }>"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+            task_output $! "$STDERR_LOG" "Configure System For BTRFS"
+            [[ $? -ne 0 ]] && exit 1
             ;;
         *)
-            "echo [FAIL] $ACTION... no filesystem chosen"
-            exit
+            printf "\r\e[31m[Error]\e[0m %sNo Filesystem Chosen\n"
+            exit 1
             ;;
     esac
 
-    ACTION="Format boot partition"
     # Only create a new boot partition if one doesn't already exist
     if [[ $existing_boot_partition != True ]]
     then
         {
             if [[ $uefi_enabled == true ]]
             then 
-                echo 'y' | mkfs.fat -F 32 $boot_partition >/dev/null 2>>$HOME/miniarcherrors.log \
-                    && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
+                echo 'y' | mkfs.fat -F 32 $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+                task_output $! "$STDERR_LOG" "Format boot partition with FAT32"
+                [[ $? -ne 0 ]] && exit 1
             else 
-                echo 'y' | mkfs.ext4 $boot_partition >/dev/null 2>>$HOME/miniarcherrors.log \
-                    && echo "[SUCCESS] $ACTION" \
-                    || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
+                echo 'y' | mkfs.ext4 $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+                task_output $! "$STDERR_LOG" "Format boot partition with EXT4"
+                [[ $? -ne 0 ]] && exit 1
             fi
         } 
     fi 
@@ -418,48 +414,39 @@ fi
 {
     if [[ $uefi_enabled == true ]]
     then
-        ACTION="Install UEFI setup tools"
-        echo -n "...$ACTION..."
-        pacstrap /mnt efibootmgr dosfstools mtools >/dev/null 2>>$HOME/miniarcherrors.log \
-            && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+        pacstrap /mnt efibootmgr dosfstools mtools >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+        task_output $! "$STDERR_LOG" "Install UEFI setup tools"
+        [[ $? -ne 0 ]] && exit 1
     fi
 
     sleep 1
 
     if [[ $filesystem == "btrfs" ]]
     then
-        ACTION="Install btrfs related packages"
-        echo -n "...$ACTION..."
-        pacstrap /mnt btrfs-progs snapper grub-btrfs >/dev/null 2>>$HOME/miniarcherrors.log \
-                && echo "[SUCCESS]" \
-                || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+        pacstrap /mnt btrfs-progs snapper grub-btrfs >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+        task_output $! "$STDERR_LOG" "Install btrfs related packages"
+        [[ $? -ne 0 ]] && exit 1
     fi
 
     sleep 1
 
-    ACTION="Install the kernel(s): '$kernel' (this may take a while)"
-    echo -n "...$ACTION..."
-    pacstrap /mnt base linux-firmware $kernel >/dev/null 2>>$HOME/miniarcherrors.log \
-        && echo "[SUCCESS]" \
-        || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+    pacstrap /mnt base linux-firmware $kernel >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Install the kernel(s): '$kernel' (this may take a while)"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
-    ACTION="Install base operating system packages (this may take a while)"
-    echo -n "...$ACTION..."
     pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages >/dev/null 2>>$HOME/miniarcherrors.log \
-            && echo "[SUCCESS]" \
-            || { echo "[FAIL] wrote error log to $HOME/miniarcherrors.log"; exit; }
+        base-devel git vim man-db man-pages >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Install base operating system packages (this may take a while)"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
-    ACTION="Update fstab with new partition table"
-    genfstab -U /mnt >> /mnt/etc/fstab 2>>$HOME/miniarcherrors.log \
-        && echo "[SUCCESS] $ACTION" \
-        || { echo "[FAIL] $ACTION... wrote error log to $HOME/miniarcherrors.log"; exit; }
+    genfstab -U /mnt >> /mnt/etc/fstab 2>>"$STDERR_LOG" &
+    task_output $! "$STDERR_LOG" "Update fstab with new partition table"
+    [[ $? -ne 0 ]] && exit 1
 
     sleep 1
 
