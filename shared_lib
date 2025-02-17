@@ -27,7 +27,7 @@ task_output() {
 
     while kill -0 "$pid" 2>/dev/null; do
         for i in $(seq 0 3); do
-            printf "\r[\e[32m%s\e[0m] %s" "${spin_chars:$i:1}" "$task_message"
+            printf "\r\e[36m[%s]\e[0m %s" "${spin_chars:$i:1}" "$task_message"
             sleep 0.1
         done
     done
