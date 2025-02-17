@@ -18,7 +18,7 @@
 
 
 source /activate_installation_variables.sh
-source /root/MiniArch/shared_lib
+source /shared_lib
 
 STDOUT_LOG="/dev/null"
 STDERR_LOG="$HOME/miniarcherrors.log"

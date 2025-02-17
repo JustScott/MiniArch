@@ -451,6 +451,7 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
     sleep 1
 
     # Move necessary scripts to /mnt
+    cp MiniArch/shared_lib /mnt
     cp MiniArch/finish_install.sh /mnt
     mv activate_installation_variables.sh /mnt
     
