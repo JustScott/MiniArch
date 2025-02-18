@@ -441,10 +441,8 @@ task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
     
     # Create files to pass variables to fin
     # Chroot into /mnt, and run the finish_install.sh script
-    arch-chroot /mnt /bin/bash finish_install.sh \
+    arch-chroot /mnt /bin/bash finish_install.sh 2>>"$STDERR_LOG_PATH" \
         || { echo -e "\n - 'arch-chroot /mnt bash finish_install.sh' failed - \n"; exit; } 
-
-    clear
 
     printf "\n\e[32m - Installation Successful! - \e[0m\n"
     echo -e '\n'

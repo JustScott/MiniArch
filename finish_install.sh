@@ -158,4 +158,4 @@ STDERR_LOG_PATH="/miniarcherrors.log"
     [[ $? -ne 0 ]] && exit 1
 }
 
-exit
+exit 0
