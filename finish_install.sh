@@ -33,8 +33,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Set system name: '$system_name'"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 }
 
 
@@ -57,8 +55,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Set up user: '$username'"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 }
 
 #----------------  System Settings & Packages ----------------
@@ -74,16 +70,12 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     task_output $! "$STDERR_LOG" "Configure locale: '$user_locale'"
     [[ $? -ne 0 ]] && exit 1
 
-    sleep 1
-
     if [[ -n "$user_timezone" ]]
     then
         ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
         task_output $! "$STDERR_LOG" "Set timezone: '$user_timezone'"
         [[ $? -ne 0 ]] && exit 1
     fi
-
-    sleep 1
 }
 
 
@@ -112,8 +104,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
             [[ $? -ne 0 ]] && exit 1
             ;;
     esac
-
-    sleep 1
 }
 
 #----------------  Grub Configuration ----------------
@@ -129,8 +119,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Configure Grub (with encryption if chosen)"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 }
 
 
@@ -140,8 +128,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     mkinitcpio --allpresets >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Generate initial ramdisk environment"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 
     # Only install grub if a boot partition doesn't already exist
     if [[ $existing_boot_partition != True ]]
@@ -163,9 +149,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     task_output $! "$STDERR_LOG" "Make grub config"
     [[ $? -ne 0 ]] && exit 1
 
-    sleep 1
-
-
     {
         systemctl enable NetworkManager
         rm /finish_install.sh
@@ -173,8 +156,6 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Enable systemd services & delete temporary MiniArch files"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 }
     
 exit

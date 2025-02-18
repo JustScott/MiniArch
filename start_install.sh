@@ -124,7 +124,7 @@ STDERR_LOG="$HOME/miniarcherrors.log"
             then
                 clear
                 echo -e " - Set as '$name' - \n"
-                sleep 2
+                sleep 1
                 break
             else 
                 clear
@@ -147,7 +147,7 @@ STDERR_LOG="$HOME/miniarcherrors.log"
             then
                 clear
                 echo -e " - Set password for $1! - \n"
-                sleep 2
+                sleep 1
                 break
             else
                 clear
@@ -221,16 +221,12 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
     task_output $! "$STDERR_LOG" "Update the keyring & install necessary packages"
     [[ $? -ne 0 ]] && exit 1
 
-    sleep 1
-
     if [[ -d /sys/firmware/efi/efivars ]]; then
         if modprobe efivars &>/dev/null || modprobe efivarfs &>/dev/null; then
             export uefi_enabled=true || export uefi_enabled=false
         fi
     fi
     echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
-
-    sleep 2
 
     clear
     echo -e "* Prompt [1/10] *\n"
@@ -419,8 +415,6 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    sleep 1
-
     if [[ $filesystem == "btrfs" ]]
     then
         pacstrap /mnt btrfs-progs snapper grub-btrfs >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
@@ -428,13 +422,9 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    sleep 1
-
     pacstrap /mnt base linux-firmware $kernel >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Install the kernel(s): '$kernel' (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 
     pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
@@ -442,13 +432,9 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
     task_output $! "$STDERR_LOG" "Install base operating system packages (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
-    sleep 1
-
     genfstab -U /mnt >> /mnt/etc/fstab 2>>"$STDERR_LOG" &
     task_output $! "$STDERR_LOG" "Update fstab with new partition table"
     [[ $? -ne 0 ]] && exit 1
-
-    sleep 1
 
     # Move necessary scripts to /mnt
     cp MiniArch/shared_lib /mnt
@@ -462,16 +448,22 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
 
     clear
 
-    echo -e '\n - Installation Successful! - \n'
-    echo 'Unmounting partitions & Rebooting in 10 seconds...(hit CTRL+c to cancel)'
-    sleep 10
+    printf "\n\e[32m - Installation Successful! - \e[0m\n"
+    echo -e '\n'
 
-    shred -uz /mnt/miniarcherrors.log 
+    for i in {10..0}; do
+        printf "\rRebooting in \e[1;36m$i\e[0m seconds...\e[31m(CTRL+c to cancel)\e[0m"
+        sleep 1
+    done
 
-    umount /mnt/boot
-    umount /mnt
-    [[ $encrypt_system == true ]] && cryptsetup luksClose cryptdisk
-    umount -a
+    echo -e "\n"
+
+    shred -uz /mnt/miniarcherrors.log &>/dev/null 
+
+    umount /mnt/boot &>/dev/null
+    umount /mnt &>/dev/null
+    [[ $encrypt_system == true ]] && cryptsetup luksClose cryptdisk &>/dev/null
+    umount -a &>/dev/null
 
     reboot
 }
