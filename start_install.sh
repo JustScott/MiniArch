@@ -18,8 +18,8 @@
 
 source /root/MiniArch/shared_lib
 
-STDOUT_LOG="/dev/null"
-STDERR_LOG="$HOME/miniarcherrors.log"
+STDOUT_LOG_PATH="/dev/null"
+STDERR_LOG_PATH="/miniarcherrors.log"
 
 #----------------  Defining Functions ----------------
 
@@ -211,14 +211,14 @@ STDERR_LOG="$HOME/miniarcherrors.log"
 
 sudo -v
 
-pacman -Syy >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-task_output $! "$STDERR_LOG" "Update pacmans database"
+pacman -Syy >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
 [[ $? -ne 0 ]] && exit 1
 
 {
     pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \
-        >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Update the keyring & install necessary packages"
+        >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Update the keyring & install necessary packages"
     [[ $? -ne 0 ]] && exit 1
 
     if [[ -d /sys/firmware/efi/efivars ]]; then
@@ -351,13 +351,13 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
             {
                 echo 'y' | mkfs.ext4 $fs_device
                 mount $fs_device /mnt
-            }>"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Configure System For EXT4"
+            }>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Configure System For EXT4"
             [[ $? -ne 0 ]] && exit 1
             ;;
         "btrfs")
-            pacman -S --noconfirm btrfs-progs >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Download BTRFS Packages"
+            pacman -S --noconfirm btrfs-progs >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Download BTRFS Packages"
             [[ $? -ne 0 ]] && exit 1
             {
                 echo 'y' | mkfs.btrfs -f $fs_device
@@ -373,8 +373,8 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
                 mkdir -p /mnt/home
                 # 257 is /mnt/@home
                 mount $fs_device -o subvolid=257 /mnt/home
-            }>"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Configure System For BTRFS"
+            }>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Configure System For BTRFS"
             [[ $? -ne 0 ]] && exit 1
             ;;
         *)
@@ -389,12 +389,12 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
         {
             if [[ $uefi_enabled == true ]]
             then 
-                echo 'y' | mkfs.fat -F 32 $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-                task_output $! "$STDERR_LOG" "Format boot partition with FAT32"
+                echo 'y' | mkfs.fat -F 32 $boot_partition >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+                task_output $! "$STDERR_LOG_PATH" "Format boot partition with FAT32"
                 [[ $? -ne 0 ]] && exit 1
             else 
-                echo 'y' | mkfs.ext4 $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-                task_output $! "$STDERR_LOG" "Format boot partition with EXT4"
+                echo 'y' | mkfs.ext4 $boot_partition >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+                task_output $! "$STDERR_LOG_PATH" "Format boot partition with EXT4"
                 [[ $? -ne 0 ]] && exit 1
             fi
         } 
@@ -410,30 +410,30 @@ task_output $! "$STDERR_LOG" "Update pacmans database"
 {
     if [[ $uefi_enabled == true ]]
     then
-        pacstrap /mnt efibootmgr dosfstools mtools >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-        task_output $! "$STDERR_LOG" "Install UEFI setup tools"
+        pacstrap /mnt efibootmgr dosfstools mtools >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Install UEFI setup tools"
         [[ $? -ne 0 ]] && exit 1
     fi
 
     if [[ $filesystem == "btrfs" ]]
     then
-        pacstrap /mnt btrfs-progs snapper grub-btrfs >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-        task_output $! "$STDERR_LOG" "Install btrfs related packages"
+        pacstrap /mnt btrfs-progs snapper grub-btrfs >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Install btrfs related packages"
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    pacstrap /mnt base linux-firmware $kernel >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Install the kernel(s): '$kernel' (this may take a while)"
+    pacstrap /mnt base linux-firmware $kernel >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Install the kernel(s): '$kernel' (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
     pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Install base operating system packages (this may take a while)"
+        base-devel git vim man-db man-pages >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Install base operating system packages (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
-    genfstab -U /mnt >> /mnt/etc/fstab 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Update fstab with new partition table"
+    genfstab -U /mnt >> /mnt/etc/fstab 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Update fstab with new partition table"
     [[ $? -ne 0 ]] && exit 1
 
     # Move necessary scripts to /mnt

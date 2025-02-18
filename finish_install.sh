@@ -20,8 +20,8 @@
 source /activate_installation_variables.sh
 source /shared_lib
 
-STDOUT_LOG="/dev/null"
-STDERR_LOG="$HOME/miniarcherrors.log"
+STDOUT_LOG_PATH="/dev/null"
+STDERR_LOG_PATH="/miniarcherrors.log"
 
 
 #----------------  System Configuration ----------------
@@ -30,8 +30,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
     {
         echo "$system_name" > /etc/hostname
         echo -e '127.0.0.1   localhost\n::1         localhost\n127.0.1.1   '"$system_name" >> /etc/hosts
-    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Set system name: '$system_name'"
+    } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Set system name: '$system_name'"
     [[ $? -ne 0 ]] && exit 1
 }
 
@@ -52,8 +52,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
         chmod u+w /etc/sudoers
         echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers
         chmod u-w /etc/sudoers
-    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Set up user: '$username'"
+    } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Set up user: '$username'"
     [[ $? -ne 0 ]] && exit 1
 }
 
@@ -66,14 +66,14 @@ STDERR_LOG="$HOME/miniarcherrors.log"
         export LANG="$(echo $user_locale | awk '{print $1}')"
         echo "LANG=$LANG" > /etc/locale.conf
         locale-gen
-    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Configure locale: '$user_locale'"
+    } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Configure locale: '$user_locale'"
     [[ $? -ne 0 ]] && exit 1
 
     if [[ -n "$user_timezone" ]]
     then
-        ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-        task_output $! "$STDERR_LOG" "Set timezone: '$user_timezone'"
+        ln -sf /usr/share/zoneinfo/$user_timezone /etc/localtime >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Set timezone: '$user_timezone'"
         [[ $? -ne 0 ]] && exit 1
     fi
 }
@@ -89,8 +89,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
                 chmod 600 /swapfile
                 mkswap /swapfile
                 echo '/swapfile none swap 0 0' >> /etc/fstab
-            } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Create & configure swapfile for the '$filesystem' filesystem"
+            } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Create & configure swapfile for the '$filesystem' filesystem"
             [[ $? -ne 0 ]] && exit 1
             ;;
         'btrfs')
@@ -99,8 +99,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
                 btrfs filesystem mkswapfile --size 2g --uuid clear /swap/swapfile
                 swapon /swap/swapfile
                 echo '/swap/swapfile none swap defaults 0 0' >> /etc/fstab
-            } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Create & configure swapfile for the '$filesystem' filesystem"
+            } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Create & configure swapfile for the '$filesystem' filesystem"
             [[ $? -ne 0 ]] && exit 1
             ;;
     esac
@@ -116,8 +116,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
             echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
         fi
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
-    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Configure Grub (with encryption if chosen)"
+    } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Configure Grub (with encryption if chosen)"
     [[ $? -ne 0 ]] && exit 1
 }
 
@@ -125,8 +125,8 @@ STDERR_LOG="$HOME/miniarcherrors.log"
 #----------------  Cleanup & Prepare  ----------------
 
 {
-    mkinitcpio --allpresets >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Generate initial ramdisk environment"
+    mkinitcpio --allpresets >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Generate initial ramdisk environment"
     [[ $? -ne 0 ]] && exit 1
 
     # Only install grub if a boot partition doesn't already exist
@@ -135,27 +135,27 @@ STDERR_LOG="$HOME/miniarcherrors.log"
         # Actual Grub Install
         if [[ $uefi_enabled == true ]]
         then
-            grub-install --efi-directory=/boot $removable_flag >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "EFI Grub Install"
+            grub-install --efi-directory=/boot $removable_flag >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "EFI Grub Install"
             [[ $? -ne 0 ]] && exit 1
         else
-            grub-install $boot_partition >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-            task_output $! "$STDERR_LOG" "Normal Grub Install"
+            grub-install $boot_partition >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Normal Grub Install"
             [[ $? -ne 0 ]] && exit 1
         fi
     fi
 
-    grub-mkconfig -o /boot/grub/grub.cfg >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Make grub config"
+    grub-mkconfig -o /boot/grub/grub.cfg >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Make grub config"
     [[ $? -ne 0 ]] && exit 1
 
     {
         systemctl enable NetworkManager
         rm /finish_install.sh
         shred -zu /activate_installation_variables.sh /miniarcherrors.log
-    } >"$STDOUT_LOG" 2>>"$STDERR_LOG" &
-    task_output $! "$STDERR_LOG" "Enable systemd services & delete temporary MiniArch files"
+    } >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Enable systemd services & delete temporary MiniArch files"
     [[ $? -ne 0 ]] && exit 1
 }
-    
+
 exit
