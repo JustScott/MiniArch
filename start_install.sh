@@ -209,15 +209,13 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 
 #----- Assign System, User, and Partition Information to Variables -----
 
-sudo -v
-
-pacman -Syy >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+pacman -Syy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
 task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
 [[ $? -ne 0 ]] && exit 1
 
 {
     pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \
-        >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Update the keyring & install necessary packages"
     [[ $? -ne 0 ]] && exit 1
 
@@ -351,12 +349,12 @@ task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
             {
                 echo 'y' | mkfs.ext4 $fs_device
                 mount $fs_device /mnt
-            }>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            }>>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
             task_output $! "$STDERR_LOG_PATH" "Configure System For EXT4"
             [[ $? -ne 0 ]] && exit 1
             ;;
         "btrfs")
-            pacman -S --noconfirm btrfs-progs >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            pacman -S --noconfirm btrfs-progs >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
             task_output $! "$STDERR_LOG_PATH" "Download BTRFS Packages"
             [[ $? -ne 0 ]] && exit 1
             {
@@ -373,7 +371,7 @@ task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
                 mkdir -p /mnt/home
                 # 257 is /mnt/@home
                 mount $fs_device -o subvolid=257 /mnt/home
-            }>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            }>>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
             task_output $! "$STDERR_LOG_PATH" "Configure System For BTRFS"
             [[ $? -ne 0 ]] && exit 1
             ;;
@@ -389,11 +387,11 @@ task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
         {
             if [[ $uefi_enabled == true ]]
             then 
-                echo 'y' | mkfs.fat -F 32 $boot_partition >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+                echo 'y' | mkfs.fat -F 32 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
                 task_output $! "$STDERR_LOG_PATH" "Format boot partition with FAT32"
                 [[ $? -ne 0 ]] && exit 1
             else 
-                echo 'y' | mkfs.ext4 $boot_partition >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+                echo 'y' | mkfs.ext4 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
                 task_output $! "$STDERR_LOG_PATH" "Format boot partition with EXT4"
                 [[ $? -ne 0 ]] && exit 1
             fi
@@ -410,25 +408,25 @@ task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
 {
     if [[ $uefi_enabled == true ]]
     then
-        pacstrap /mnt efibootmgr dosfstools mtools >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        pacstrap /mnt efibootmgr dosfstools mtools >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
         task_output $! "$STDERR_LOG_PATH" "Install UEFI setup tools"
         [[ $? -ne 0 ]] && exit 1
     fi
 
     if [[ $filesystem == "btrfs" ]]
     then
-        pacstrap /mnt btrfs-progs snapper grub-btrfs >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        pacstrap /mnt btrfs-progs snapper grub-btrfs >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
         task_output $! "$STDERR_LOG_PATH" "Install btrfs related packages"
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    pacstrap /mnt base linux-firmware $kernel >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    pacstrap /mnt base linux-firmware $kernel >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Install the kernel(s): '$kernel' (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
     pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages >"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        base-devel git vim man-db man-pages >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Install base operating system packages (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
