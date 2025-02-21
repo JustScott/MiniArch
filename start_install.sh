@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-source /root/MiniArch/shared_lib
+source ./MiniArch/shared_lib
 
 STDOUT_LOG_PATH="/dev/null"
 STDERR_LOG_PATH="/miniarcherrors.log"
