@@ -9,11 +9,11 @@ created by MiniArch.
 
 I hope to add this ability in the future.
 
-## Steps to take before running the install script
+## How to run
 
 MiniArch can only operate on empty diskspace, as in, you must first make
-space on your disk with something like `cfdisk` before running `start_install.sh`
-otherwise it won't be recognized.
+space on your disk with something like `cfdisk` before MiniArch will make
+the disk available to select for installation.
 
 ```bash
 # Connect to a network
@@ -26,25 +26,7 @@ otherwise it won't be recognized.
 wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
-
-pacman-key --init
-pacman-key --populate
-pacman -Sy --noconfirm git
-# -- -- # 
-# Only run the pacman commands below if you experience key errors
-#  with the above pacman command
-umount /etc/pacman.d/gnupg
-rm -rf /etc/pacman.d/gnupg
-pacman-key --init
-pacman-key --populate
-pacman -Sy archlinux-keyring git --noconfirm
-# -- -- #
-
-# Clone this repo
-git clone https://www.github.com/JustScott/MiniArch.git
-
-# Run the install script
-bash MiniArch/start_install.sh
+curl -L https://raw.githubusercontent.com/JustScott/MiniArch/refs/heads/main/install_repo.sh | bash
 ```
 
 ## Development
