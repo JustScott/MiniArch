@@ -22,6 +22,7 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 SHARED_LIB_URL="https://raw.githubusercontent.com/JustScott/MiniArch/refs/heads/main/shared_lib"
 
 REPO_URL="https://www.github.com/JustScott/MiniArch"
+REPO_DIRECTORY="$(basename "$REPO_URL")"
 
 printf "\n\e[36m%s\e[0m" "Download the shared_lib file..."
 curl -LO $SHARED_LIB_URL >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH"
@@ -86,6 +87,12 @@ fi
 pacman -S --noconfirm git >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
 task_output $! "$STDERR_LOG_PATH" "Install git"
 [[ $? -ne 0 ]] && exit 1
+
+# Clear the old repo if it exists
+if [[ -d "$REPO_DIRECTORY" ]]
+then
+    rm -rf "$REPO_DIRECTORY" &>/dev/null
+fi
 
 # Clone the repo
 git clone $REPO_URL \
