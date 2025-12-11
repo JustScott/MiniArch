@@ -125,6 +125,12 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 #----------------  Cleanup & Prepare  ----------------
 
 {
+    # Temporary fix to mkinitcpio error ('file not found: /etc/vconsole.conf')
+    if ! [[ -f "/etc/vconsole.conf" ]]
+    then
+        echo > /etc/vconsole.conf &>/dev/null
+    fi
+
     mkinitcpio --allpresets >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Generate initial ramdisk environment"
     [[ $? -ne 0 ]] && exit 1
