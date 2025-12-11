@@ -60,11 +60,11 @@ configure_pacman()
     [[ $? -ne 0 ]] && return 1
 
     pacman -Sy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-    task_output $! "$STDERR_LOG_PATH" "Update pacmans package database"
+    task_output $! "$STDERR_LOG_PATH" "Update pacman's package database"
     [[ $? -ne 0 ]] && return 1
 
     pacman -S --noconfirm archlinux-keyring >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-    task_output $! "$STDERR_LOG_PATH" "Update pacmans keyring"
+    task_output $! "$STDERR_LOG_PATH" "Update pacman's keyring"
     [[ $? -ne 0 ]] && return 1
 
     return 0
