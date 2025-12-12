@@ -21,6 +21,8 @@ source ./MiniArch/shared_lib
 STDOUT_LOG_PATH="/dev/null"
 STDERR_LOG_PATH="/miniarcherrors.log"
 
+PACMAN_UPDATED_FILE="/tmp/pacman_update"
+
 #----------------  Defining Functions ----------------
 
 {
@@ -209,9 +211,12 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 
 #----- Assign System, User, and Partition Information to Variables -----
 
-pacman -Syy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-task_output $! "$STDERR_LOG_PATH" "Update pacmans database"
-[[ $? -ne 0 ]] && exit 1
+if ! [[ -f "$PACMAN_UPDATED_FILE" ]]
+then
+    pacman -Sy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Update pacman's database"
+    [[ $? -ne 0 ]] && exit 1
+fi
 
 {
     pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \

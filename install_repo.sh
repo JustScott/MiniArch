@@ -24,6 +24,8 @@ SHARED_LIB_URL="https://raw.githubusercontent.com/JustScott/MiniArch/refs/heads/
 REPO_URL="https://www.github.com/JustScott/MiniArch"
 REPO_DIRECTORY="$(basename "$REPO_URL")"
 
+PACMAN_UPDATED_FILE="/tmp/pacman_update"
+
 printf "\n\e[36m%s\e[0m" "Download the shared_lib file..."
 curl -LO $SHARED_LIB_URL >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH"
 if [[ $? -ne 0 ]]
@@ -63,6 +65,7 @@ configure_pacman()
     pacman -Sy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Update pacman's package database"
     [[ $? -ne 0 ]] && return 1
+    touch $PACMAN_UPDATED_FILE
 
     pacman -S --noconfirm archlinux-keyring >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Update pacman's keyring"
@@ -84,9 +87,12 @@ then
     fi
 fi
 
-pacman -S --noconfirm git >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-task_output $! "$STDERR_LOG_PATH" "Install git"
-[[ $? -ne 0 ]] && exit 1
+if ! pacman -Q git &>/dev/null
+then
+    pacman -S --noconfirm git >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" "Install git"
+    [[ $? -ne 0 ]] && exit 1
+fi
 
 # Clear the old repo if it exists
 if [[ -d "$REPO_DIRECTORY" ]]
