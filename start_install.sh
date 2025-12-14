@@ -216,6 +216,8 @@ then
     pacman -Sy >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Update pacman's database"
     [[ $? -ne 0 ]] && exit 1
+
+    touch $PACMAN_UPDATED_FILE
 fi
 
 {
