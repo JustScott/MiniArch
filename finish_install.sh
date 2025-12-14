@@ -146,23 +146,21 @@ INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
     task_output $! "$STDERR_LOG_PATH" "Generate initial ramdisk environment"
     [[ $? -ne 0 ]] && exit 1
 
-    # Only install grub if a boot partition doesn't already exist
-    if [[ $existing_boot_partition != True ]]
+    if [[ $uefi_enabled == true ]]
     then
-        # Actual Grub Install
-        if [[ $uefi_enabled == true ]]
-        then
-            grub-install --efi-directory=/boot $removable_flag >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-            task_output $! "$STDERR_LOG_PATH" "EFI Grub Install"
-            [[ $? -ne 0 ]] && exit 1
-        else
-            grub-install $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-            task_output $! "$STDERR_LOG_PATH" "Normal Grub Install"
-            [[ $? -ne 0 ]] && exit 1
-        fi
+        grub-install --efi-directory=/boot $removable_flag \
+            >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "EFI Grub Install"
+        [[ $? -ne 0 ]] && exit 1
+    else
+        grub-install $boot_partition \
+            >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Non-EFI Grub Install"
+        [[ $? -ne 0 ]] && exit 1
     fi
 
-    grub-mkconfig -o /boot/grub/grub.cfg >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    grub-mkconfig -o /boot/grub/grub.cfg \
+        >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Make grub config"
     [[ $? -ne 0 ]] && exit 1
 

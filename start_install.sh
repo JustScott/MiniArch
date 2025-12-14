@@ -25,9 +25,222 @@ PACMAN_UPDATED_FILE="/tmp/pacman_update"
 
 INSTALLATION_VARIABLES_FILE=/tmp/activate_installation_variables.sh
 
+MINIMUM_FREE_DISK_SPACE="11G"
+# TODO: Remove the need for a buffer with exact sizing
+ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
+
 #----------------  Defining Functions ----------------
 
 {
+    get_free_disk_space() {
+        declare -g free_disk_space=""
+
+        disk_name="$1"
+
+        if ! lsblk | grep " disk " | grep "^$disk_name " &>/dev/null
+        then
+            printf "\e[31m%s\e[0m" "Disk not found in block devices... this shouldn't happen. Stopping."
+            exit 1
+        fi
+
+        remaining_disk_space=$(lsblk -nb | grep " disk " | grep "^$disk_name " | awk '{print $4}')
+
+        free_disk_space=$(echo -e "$(lsblk -nb | grep "$disk_name")\nEND OUTPUT" | \
+            while IFS= read -r line
+        do
+            if echo "$line" | grep "END OUTPUT" &>/dev/null
+            then
+                echo $remaining_disk_space
+                return 0
+            fi
+
+            if echo "$line" | grep " disk " &>/dev/null
+            then
+                if ! echo "$line" | grep "^$disk_name " &>/dev/null
+                then
+                    echo $remaining_disk_space
+                    return 0
+                fi
+            fi
+
+            if echo "$line" | grep " part " &>/dev/null
+            then
+                partition_size=$(echo "$line" | awk '{print $4}')
+                (( remaining_disk_space-=partition_size ))
+            fi
+        done)
+    }
+
+    get_installation_disk() {
+        declare -g installation_disk_name=""
+
+        disks_free_space="$(lsblk -nb | grep " disk " | while IFS= read -r line
+        do
+            disk_name=$(echo "$line" | awk '{print $1}')
+
+            get_free_disk_space "$disk_name"
+
+            if [[ $free_disk_space -gt \
+                $(echo "$MINIMUM_FREE_DISK_SPACE" | numfmt --from=iec) ]]
+            then
+                buffered_free_disk_space=$((free_disk_space-ROOT_BUFFER_SPACE))
+                human_readable_disk_size=$(echo "$buffered_free_disk_space" | numfmt --to=iec)
+                printf " %-15s %s\n" "$disk_name" "$human_readable_disk_size"
+            fi
+        done)"
+
+        if [[ -n "$disks_free_space" ]]
+        then
+            printf "\n%-15s %s\n" "Disk" "Free Space"
+            echo "--------------------------"
+            echo "$disks_free_space"
+
+            echo -e "\n\n\n"
+
+            while :
+            do
+                if ((invalid_disk_name))
+                then
+                    printf "\n\e[31m%s\e[0m\n" " - Must enter a valid disk name - "
+                    invalid_disk_name=0
+                fi
+
+                read -p 'Enter Disk: ' disk_name
+
+                if [[ -n "$disk_name" ]] \
+                    && echo "$disks_free_space" | grep " $disk_name " &>/dev/null
+                then
+                    installation_disk_name="$disk_name"
+                    return
+                else
+                    invalid_disk_name=1
+                    continue
+                fi
+            done
+        else
+            printf "\n\e[31m%s\e[0m \e[36m%s\e[0m\n\t%s" \
+                "No disks have the minimum required free space for installation" \
+                "($MINIMUM_FREE_DISK_SPACE)"
+            exit 1
+        fi
+    }
+
+    set_root_partition_size() {
+        declare -g root_partition_size
+
+        if [[ -z "$installation_disk_name" ]]
+        then
+            printf "\e[31m%s\e[0m" "Installation disk variable not set... this shouldn't happen."
+        fi
+
+        get_free_disk_space "$installation_disk_name"
+
+        while :
+        do
+            read -p 'root partition size in GB (e.g. 20) (leave empty to fill remaining disk space): ' chosen_root_partition_size
+
+            if [[ -z "$chosen_root_partition_size" ]]
+            then
+                root_partition_size=$((free_disk_space-ROOT_BUFFER_SPACE))
+                return
+            fi
+
+            if [[ "$chosen_root_partition_size" =~ ^[0-9]+$ && $chosen_root_partition_size -gt 0 ]]
+            then
+                chosen_root_partition_size_in_bytes=$(\
+                    echo "${chosen_root_partition_size}G" | numfmt --from=iec)
+
+                if [[ $chosen_root_partition_size_in_bytes -lt $free_disk_space ]]
+                then
+                    if [[ \
+                        $chosen_root_partition_size_in_bytes -gt\
+                        $(echo $MINIMUM_FREE_DISK_SPACE | numfmt --from=iec) ]]
+                    then
+                        root_partition_size=$chosen_root_partition_size_in_bytes
+                        return 0
+                    else
+                        printf "\e[31m%s\e[0m\e[36m %s\e[0m\n" \
+                            "[!] root partition must be larger than" \
+                            "'$MINIMUM_FREE_DISK_SPACE'"
+                        continue
+                    fi
+                else
+                    printf "\e[31m%s\e[0m\n" "[!] partition must be smaller than the disks free space"
+                    continue
+                fi
+            else
+                printf "\e[31m%s\e[0m\n" "[!] Input must be a whole number greater then 0"
+                continue
+            fi
+        done
+    }
+
+    configure_partitions() {
+        get_installation_disk
+        set_root_partition_size
+
+        PARTITION_TABLE_FILE="/tmp/${installation_disk_name}_partition_table"
+        DISK_PATH="/dev/$installation_disk_name"
+        SECTOR_SIZE=512
+
+        boot_partition_bytes=$(echo "1G" | numfmt --from=iec)
+
+        if lsblk | grep "^$installation_disk_name " | grep " disk " &>/dev/null
+        then
+            if ! sfdisk -d "$DISK_PATH" &>/dev/null
+            then
+                echo -e \
+                    "label: gpt\ndevice: $DISK_PATH\nunit: sectors\nsector-size: $SECTOR_SIZE" \
+                    >> /tmp/new_disk_partition_table
+                sfdisk "$DISK_PATH" < /tmp/new_disk_partition_table
+            fi
+
+            sfdisk -d "$DISK_PATH" > $PARTITION_TABLE_FILE
+
+            SECTOR_SIZE=$(sfdisk -d "$DISK_PATH" | grep "sector-size: " | awk -F': ' '{print $2}')
+
+            if [[ -z "$SECTOR_SIZE" ]]
+            then
+                printf "\n\e[31m%s %s\e[0m\n" \
+                    "[!] The chosen disk '$DISK_PATH' doesnt contain a default sector size." \
+                    "This shouldn't happen. Stopping."
+                exit 1
+            fi
+
+            boot_partition_sectors=$((boot_partition_bytes/SECTOR_SIZE))
+            root_partition_sectors=$((root_partition_size/SECTOR_SIZE))
+
+            echo "size= $boot_partition_sectors, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B" \
+                >> $PARTITION_TABLE_FILE
+            echo "size= $root_partition_sectors, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4" \
+                >> $PARTITION_TABLE_FILE
+
+            sfdisk "$DISK_PATH" < $PARTITION_TABLE_FILE \
+                >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            task_output $! "$STDERR_LOG_PATH" "Update '$DISK_PATH' partition table"
+            [[ $? -ne 0 ]] && exit 1
+        else
+            printf "\n\e[31m%s %s\e[0m\n" \
+                "[!] The chosen disk '$DISK_PATH' doesnt exist" \
+                "This shouldn't happen. Stopping."
+            exit 1
+        fi
+
+        new_partitions="$(sfdisk -d "$DISK_PATH" | tail -n2)"
+        boot_partition_sector_size=$(( $(echo "1G" | numfmt --from=iec) / 512 ))
+
+        boot_partition="$(echo "$new_partitions" \
+            | grep "$boot_partition_sector_size" \
+            | awk '{print $1}')"
+
+        root_partition="$(echo "$new_partitions" \
+            | grep --invert-match "$boot_partition_sector_size" \
+            | awk '{print $1}')"
+
+        echo "boot_partition=\"$boot_partition\"" >> $INSTALLATION_VARIABLES_FILE
+        echo "root_partition=\"$root_partition\"" >> $INSTALLATION_VARIABLES_FILE
+    }
+
     ask_set_encryption() {
         declare -g encrypt_system=""
         local encrypt verify_encrypt
@@ -223,7 +436,7 @@ then
 fi
 
 {
-    pacman -S --noconfirm fzf python arch-install-scripts \
+    pacman -S --noconfirm fzf arch-install-scripts \
         >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Install packages needed for script"
     [[ $? -ne 0 ]] && exit 1
@@ -237,9 +450,8 @@ fi
 
     clear
     echo -e "* Prompt [1/10] *\n"
-    # Run python script, exit if the script returns an error code
-    python3 MiniArch/create_partition_table.py \
-        || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
+    configure_partitions
+    unset free_disk_space
 
     source $INSTALLATION_VARIABLES_FILE
     if [[ -z "$root_partition" ]]; then
@@ -390,22 +602,16 @@ fi
             ;;
     esac
 
-    # Only create a new boot partition if one doesn't already exist
-    if [[ $existing_boot_partition != True ]]
+    if [[ $uefi_enabled == true ]]
     then
-        {
-            if [[ $uefi_enabled == true ]]
-            then 
-                echo 'y' | mkfs.fat -F 32 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-                task_output $! "$STDERR_LOG_PATH" "Format boot partition with FAT32"
-                [[ $? -ne 0 ]] && exit 1
-            else 
-                echo 'y' | mkfs.ext4 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-                task_output $! "$STDERR_LOG_PATH" "Format boot partition with EXT4"
-                [[ $? -ne 0 ]] && exit 1
-            fi
-        } 
-    fi 
+        echo 'y' | mkfs.fat -F 32 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Format boot partition with FAT32"
+        [[ $? -ne 0 ]] && exit 1
+    else
+        echo 'y' | mkfs.ext4 $boot_partition >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        task_output $! "$STDERR_LOG_PATH" "Format boot partition with EXT4"
+        [[ $? -ne 0 ]] && exit 1
+    fi
 
     mkdir -p /mnt/boot
     mount $boot_partition /mnt/boot
