@@ -23,6 +23,8 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 
 PACMAN_UPDATED_FILE="/tmp/pacman_update"
 
+INSTALLATION_VARIABLES_FILE=/tmp/activate_installation_variables.sh
+
 #----------------  Defining Functions ----------------
 
 {
@@ -231,7 +233,7 @@ fi
             export uefi_enabled=true || export uefi_enabled=false
         fi
     fi
-    echo "uefi_enabled=\"$uefi_enabled\"" >> activate_installation_variables.sh
+    echo "uefi_enabled=\"$uefi_enabled\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [1/10] *\n"
@@ -239,7 +241,7 @@ fi
     python3 MiniArch/create_partition_table.py \
         || { echo -e "\n - Failed to create the partition table - \n"; exit; } 
 
-    source activate_installation_variables.sh
+    source $INSTALLATION_VARIABLES_FILE
     if [[ -z "$root_partition" ]]; then
         echo -e "\n - [ERROR] Failed to get the root partition, this shouldn't happen... stopping - \n"
         exit 1
@@ -253,7 +255,7 @@ fi
         echo -e "\n - [ERROR] Failed to get a system name, this shouldn't happen... stopping - \n"
         exit 1
     fi
-    echo -e "\nsystem_name=\"$name\"" >> activate_installation_variables.sh
+    echo -e "\nsystem_name=\"$name\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [3/10] *\n"
@@ -263,25 +265,25 @@ fi
         echo -e "\n - [ERROR] Failed to get a user name, this shouldn't happen... stopping - \n"
         exit 1
     fi
-    echo -e "\nusername=\"$name\"" >> activate_installation_variables.sh
+    echo -e "\nusername=\"$name\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear 
     echo -e "* Prompt [4/10] *\n"
     get_user_password "$name"
-    echo -e "\nuser_password=\"$user_password\"" >> activate_installation_variables.sh
+    echo -e "\nuser_password=\"$user_password\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [5/10] *\n"
     echo -e "Choose your timezone (start typing to narrow down choices):"
     user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
-    echo -e "\nuser_timezone=\"$user_timezone\"" >> activate_installation_variables.sh
+    echo -e "\nuser_timezone=\"$user_timezone\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [6/10] *\n"
     echo -e "Choose your locale (press <esc> to use 'en_US.UTF-8 UTF-8' (recommended) ):"
     user_locale="$(cat /usr/share/i18n/SUPPORTED | fzf --reverse --height=90%)"
     [[ -z "$user_locale" ]] && user_locale='en_US.UTF-8 UTF-8'
-    echo -e "\nuser_locale=\"$user_locale\"" >> activate_installation_variables.sh
+    echo -e "\nuser_locale=\"$user_locale\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [7/10] *\n"
@@ -298,12 +300,12 @@ fi
         echo -e "\n - [ERROR] Failed to get a filesystem type, this shouldn't happen... stopping - \n"
         exit 1
     fi
-    echo -e "\nfilesystem=\"$filesystem\"" >> activate_installation_variables.sh
+    echo -e "\nfilesystem=\"$filesystem\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [9/10] *\n"
     ask_removable
-    echo -e "\nremovable_flag=\"$removable_flag\"" >> activate_installation_variables.sh
+    echo -e "\nremovable_flag=\"$removable_flag\"" >> $INSTALLATION_VARIABLES_FILE
 
     clear
     echo -e "* Prompt [10/10] *\n"
@@ -312,7 +314,7 @@ fi
         echo -e "\n - [ERROR] Failed to get user's choice on encrypting the system, this shouldn't happen... stopping - \n"
         exit 1
     fi
-    echo -e "\nencrypt_system=$encrypt_system" >> activate_installation_variables.sh
+    echo -e "\nencrypt_system=$encrypt_system" >> $INSTALLATION_VARIABLES_FILE
 }
 
 
@@ -444,7 +446,7 @@ fi
     # Move necessary scripts to /mnt
     cp MiniArch/shared_lib /mnt
     cp MiniArch/finish_install.sh /mnt
-    mv activate_installation_variables.sh /mnt
+    mv $INSTALLATION_VARIABLES_FILE /mnt
     
     # Create files to pass variables to fin
     # Chroot into /mnt, and run the finish_install.sh script

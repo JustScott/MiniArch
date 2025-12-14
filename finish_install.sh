@@ -23,6 +23,7 @@ source /shared_lib
 STDOUT_LOG_PATH="/dev/null"
 STDERR_LOG_PATH="/miniarcherrors.log"
 
+INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
 
 #----------------  System Configuration ----------------
 
@@ -160,7 +161,7 @@ STDERR_LOG_PATH="/miniarcherrors.log"
     {
         systemctl enable NetworkManager
         rm /finish_install.sh
-        shred -zu /activate_installation_variables.sh "$STDERR_LOG_PATH"
+        shred -zu $INSTALLATION_VARIABLES_FILE "$STDERR_LOG_PATH"
     } >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Enable systemd services & delete temporary MiniArch files"
     [[ $? -ne 0 ]] && exit 1
