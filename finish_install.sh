@@ -111,8 +111,10 @@ STDERR_LOG_PATH="/miniarcherrors.log"
 {
     {
         if [[ "$encrypt_system" == true ]]; then
+            root_partition_UUID="$(blkid "$root_partition" | awk -F'"' '{print $2}')"
+
             # Encryption configuration
-            echo "GRUB_CMDLINE_LINUX='cryptdevice=${root_partition}:cryptdisk'" >> /etc/default/grub
+            echo "GRUB_CMDLINE_LINUX='cryptdevice=UUID=${root_partition_UUID}:cryptdisk'" >> /etc/default/grub
             echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
         fi
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
