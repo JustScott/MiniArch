@@ -221,9 +221,9 @@ then
 fi
 
 {
-    pacman -S --noconfirm fzf archlinux-keyring python arch-install-scripts \
+    pacman -S --noconfirm fzf python arch-install-scripts \
         >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-    task_output $! "$STDERR_LOG_PATH" "Update the keyring & install necessary packages"
+    task_output $! "$STDERR_LOG_PATH" "Install packages needed for script"
     [[ $? -ne 0 ]] && exit 1
 
     if [[ -d /sys/firmware/efi/efivars ]]; then
