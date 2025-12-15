@@ -311,7 +311,7 @@ def write_vars_to_file(
     '''
     Writes variables to files so the bash scripts can read them
     '''
-    with open("activate_installation_variables.sh", "a") as file:
+    with open("/tmp/activate_installation_variables.sh", "a") as file:
         file.write(f"\nboot_partition=\"{boot_partition}\"")
         file.write(f"\nexisting_boot_partition={str(existing_boot_partition)}")
         file.write(f"\nroot_partition=\"{next_open_partition}\"")

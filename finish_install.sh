@@ -112,7 +112,16 @@ INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
 {
     {
         if [[ "$encrypt_system" == true ]]; then
-            root_partition_UUID="$(blkid "$root_partition" | awk -F'"' '{print $2}')"
+            root_partition_UUID="$( \
+                blkid "$root_partition" \
+                | awk -F'UUID="' '{print $2}' \
+                | awk -F'"' '{print $1}')"
+
+            if [[ -z "$root_partition_UUID" ]]
+            then
+                printf "\e[31m%s\e[0m" "Failed to get root partition UUID. This shouldn't happen. Stopping"
+                exit 1
+            fi
 
             # Encryption configuration
             echo "GRUB_CMDLINE_LINUX='cryptdevice=UUID=${root_partition_UUID}:cryptdisk'" >> /etc/default/grub
@@ -124,14 +133,13 @@ INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
     [[ $? -ne 0 ]] && exit 1
 }
 
-
 #----------------  Cleanup & Prepare  ----------------
 
 {
     # Temporary fix to mkinitcpio error ('file not found: /etc/vconsole.conf')
     if ! [[ -f "/etc/vconsole.conf" ]]
     then
-        echo > /etc/vconsole.conf &>/dev/null
+        touch /etc/vconsole.conf &>/dev/null
     fi
 
     mkinitcpio --allpresets >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
