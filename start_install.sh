@@ -387,7 +387,7 @@ BOOT_AND_BUFFER_SIZE=$(echo \
             then
                 clear
                 echo -e " - Set as '$name' - \n"
-                sleep 1
+                sleep .5
                 break
             else 
                 clear
@@ -576,8 +576,20 @@ fi
     clear
     echo -e "* Prompt [5/10] *\n"
     echo -e "Choose your timezone (start typing to narrow down choices):"
-    user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
-    echo -e "\nuser_timezone=\"$user_timezone\"" >> $INSTALLATION_VARIABLES_FILE
+
+    while :
+    do
+        user_timezone=$(timedatectl list-timezones | fzf --reverse --height=90%)
+        if ! [[ -n "$user_timezone" ]] && \
+            timedatectl list-timezones | grep "$user_timezone" &>/dev/null
+        then
+            printf "\e[31m%s\e[0m" "[!] Timezone not in list, try again."
+            continue
+        else
+            echo -e "\nuser_timezone=\"$user_timezone\"" >> $INSTALLATION_VARIABLES_FILE
+            break
+        fi
+    done
 
     clear
     echo -e "* Prompt [6/10] *\n"
