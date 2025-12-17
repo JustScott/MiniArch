@@ -25,9 +25,22 @@ PACMAN_UPDATED_FILE="/tmp/pacman_update"
 
 INSTALLATION_VARIABLES_FILE=/tmp/activate_installation_variables.sh
 
-MINIMUM_FREE_DISK_SPACE="11G"
-# TODO: Remove the need for a buffer with exact sizing
-ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
+BOOT_PARTITION_SIZE="1G"
+MINIMUM_ROOT_PARTITION_SIZE="10G"
+ROOT_PARTITION_BUFFER_SIZE="1G"
+
+MINIMUM_FREE_DISK_SPACE=$(echo \
+    $((\
+    $(echo "$BOOT_PARTITION_SIZE" | numfmt --from=iec) \
+    + $(echo "$MINIMUM_ROOT_PARTITION_SIZE" | numfmt --from=iec) \
+    + $(echo "$ROOT_PARTITION_BUFFER_SIZE" | numfmt --from=iec)
+    )) | numfmt --to=iec)
+
+BOOT_AND_BUFFER_SIZE=$(echo \
+    $((\
+    $(echo "$BOOT_PARTITION_SIZE" | numfmt --from=iec) \
+    + $(echo "$ROOT_PARTITION_BUFFER_SIZE" | numfmt --from=iec) \
+    )) | numfmt --to=iec)
 
 #----------------  Defining Functions ----------------
 
@@ -80,11 +93,15 @@ ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
 
             get_free_disk_space "$disk_name"
 
-            if [[ $free_disk_space -gt \
+            if [[ $free_disk_space -ge \
                 $(echo "$MINIMUM_FREE_DISK_SPACE" | numfmt --from=iec) ]]
             then
-                buffered_free_disk_space=$((free_disk_space-ROOT_BUFFER_SPACE))
-                human_readable_disk_size=$(echo "$buffered_free_disk_space" | numfmt --to=iec)
+                adjusted_free_disk_space=$(( \
+                    free_disk_space \
+                    - $(echo $BOOT_AND_BUFFER_SIZE | numfmt --from=iec)
+                    ))
+                human_readable_disk_size=$(\
+                    echo "$adjusted_free_disk_space" | numfmt --to=iec)
                 printf " %-15s %s\n" "$disk_name" "$human_readable_disk_size"
             fi
         done)"
@@ -135,41 +152,70 @@ ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
 
         get_free_disk_space "$installation_disk_name"
 
+        printf "\n\e[36m%s\e[0m\n" \
+            "Tip: Root partition size must be atleast '$MINIMUM_ROOT_PARTITION_SIZE'"
+
         while :
         do
-            read -p 'root partition size in GB (e.g. 20) (leave empty to fill remaining disk space): ' chosen_root_partition_size
+            read -p 'root partition in Gigabytes (e.g. 20) (leave empty to fill remaining disk space): ' chosen_root_partition_size
 
             if [[ -z "$chosen_root_partition_size" ]]
             then
-                root_partition_size=$((free_disk_space-ROOT_BUFFER_SPACE))
+                root_partition_size=$((\
+                    free_disk_space \
+                    - $(echo $BOOT_AND_BUFFER_SIZE | --from=iec) \
+                    ))
                 return
+            fi
+
+            if echo "$chosen_root_partition_size" \
+                | grep -i "G" &>/dev/null
+            then
+                chosen_root_partition_size=$(\
+                    echo "$chosen_root_partition_size" \
+                    | awk -F"[Gg]" '{print $1}')
             fi
 
             if [[ "$chosen_root_partition_size" =~ ^[0-9]+$ && $chosen_root_partition_size -gt 0 ]]
             then
-                chosen_root_partition_size_in_bytes=$(\
-                    echo "${chosen_root_partition_size}G" | numfmt --from=iec)
+                if echo "${chosen_root_partition_size}G" \
+                    | numfmt --from=iec &>/dev/null
+                then
+                    chosen_root_partition_size_in_bytes=$(\
+                        echo "${chosen_root_partition_size}G" | numfmt --from=iec)
+                else
+                    printf "\e[31m%s\e[0m\n" "[!] Invalid Input"
+                    continue
+                fi
 
-                if [[ $chosen_root_partition_size_in_bytes -lt $free_disk_space ]]
+                free_root_partition_space=$(( \
+                    free_disk_space \
+                    - $(echo $BOOT_AND_BUFFER_SIZE | numfmt --from=iec)
+                    ))
+
+                if [[ $chosen_root_partition_size_in_bytes \
+                    -le $free_root_partition_space ]]
                 then
                     if [[ \
-                        $chosen_root_partition_size_in_bytes -gt\
-                        $(echo $MINIMUM_FREE_DISK_SPACE | numfmt --from=iec) ]]
+                        $chosen_root_partition_size_in_bytes -ge\
+                        $(echo $MINIMUM_ROOT_PARTITION_SIZE | numfmt --from=iec) ]]
                     then
                         root_partition_size=$chosen_root_partition_size_in_bytes
                         return 0
                     else
                         printf "\e[31m%s\e[0m\e[36m %s\e[0m\n" \
-                            "[!] root partition must be larger than" \
-                            "'$MINIMUM_FREE_DISK_SPACE'"
+                            "[!] root partition must be greater than or equal to: " \
+                            "'$MINIMUM_ROOT_PARTITION_SIZE'"
                         continue
                     fi
                 else
-                    printf "\e[31m%s\e[0m\n" "[!] partition must be smaller than the disks free space"
+                    printf "\e[31m%s\e[0m\n" \
+                        "[!] partition must be smaller than the disks free space"
                     continue
                 fi
             else
-                printf "\e[31m%s\e[0m\n" "[!] Input must be a whole number greater then 0"
+                printf "\e[31m%s\e[0m\n" \
+                    "[!] Input must be a whole number greater then 0"
                 continue
             fi
         done
@@ -183,7 +229,7 @@ ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
         DISK_PATH="/dev/$installation_disk_name"
         SECTOR_SIZE=512
 
-        boot_partition_bytes=$(echo "1G" | numfmt --from=iec)
+        boot_partition_bytes=$(echo "$BOOT_PARTITION_SIZE" | numfmt --from=iec)
 
         if lsblk | grep "^$installation_disk_name " | grep " disk " &>/dev/null
         then
@@ -227,7 +273,7 @@ ROOT_BUFFER_SPACE=$(echo "2G" | numfmt --from=iec)
         fi
 
         new_partitions="$(sfdisk -d "$DISK_PATH" | tail -n2)"
-        boot_partition_sector_size=$(( $(echo "1G" | numfmt --from=iec) / 512 ))
+        boot_partition_sector_size=$(( $(echo "$BOOT_PARTITION_SIZE" | numfmt --from=iec) / 512 ))
 
         boot_partition="$(echo "$new_partitions" \
             | grep "$boot_partition_sector_size" \
