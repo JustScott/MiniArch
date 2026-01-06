@@ -210,7 +210,7 @@ BOOT_AND_BUFFER_SIZE=$(echo \
                     fi
                 else
                     printf "\e[31m%s\e[0m\n" \
-                        "[!] partition must be smaller than the disks free space"
+                        "[!] partition must be less than or equal to the disks free space"
                     continue
                 fi
             else
