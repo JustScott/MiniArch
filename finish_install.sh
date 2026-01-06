@@ -125,7 +125,7 @@ INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
 
             # Encryption configuration
             echo "GRUB_CMDLINE_LINUX='cryptdevice=UUID=${root_partition_UUID}:cryptdisk'" >> /etc/default/grub
-            echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
+            echo -e 'MODULES=()\nBINARIES=()\nFiles=()\nHOOKS=(base udev microcode autodetect modconf block encrypt filesystems keyboard fsck)' > /etc/mkinitcpio.conf
         fi
         echo -e '\nGRUB_DISABLE_OS_PROBER=false\nGRUB_SAVEDEFAULT=true\nGRUB_DEFAULT=saved' >> /etc/default/grub
     } >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
@@ -136,6 +136,20 @@ INSTALLATION_VARIABLES_FILE=/activate_installation_variables.sh
 #----------------  Cleanup & Prepare  ----------------
 
 {
+    cpu_microcode_packages=()
+
+    cpu_vendor=$(lscpu | awk '/Vendor ID/ {print $3}')
+    echo "$cpu_vendor" | grep -i "amd" &>/dev/null \
+        && cpu_microcode_packages+=(amd-ucode)
+    echo "$cpu_vendor" | grep -i "intel" &>/dev/null \
+        && cpu_microcode_packages+=(intel-ucode)
+
+    pacman -S ${cpu_microcode_packages[@]} --noconfirm \
+        >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    task_output $! "$STDERR_LOG_PATH" \
+        "Update the CPU microcode to avoid vulnerabilities"
+    [[ $? -ne 0 ]] && exit 1
+
     # Temporary fix to mkinitcpio error ('file not found: /etc/vconsole.conf')
     if ! [[ -f "/etc/vconsole.conf" ]]
     then
