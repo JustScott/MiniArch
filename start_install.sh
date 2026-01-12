@@ -163,9 +163,9 @@ BOOT_AND_BUFFER_SIZE=$(echo \
             then
                 root_partition_size=$((\
                     free_disk_space \
-                    - $(echo $BOOT_AND_BUFFER_SIZE | --from=iec) \
+                    - $(echo $BOOT_AND_BUFFER_SIZE | numfmt --from=iec) \
                     ))
-                return
+                return 0
             fi
 
             if echo "$chosen_root_partition_size" \
