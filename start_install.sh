@@ -428,10 +428,19 @@ BOOT_AND_BUFFER_SIZE=$(echo \
                 
         all_packages="$(pacman -Slq)"
 
-        echo "$all_packages" | grep -x "linux" &>/dev/null && kernel_options+=("linux")
-        echo "$all_packages" | grep -x "linux-lts" &>/dev/null && kernel_options+=("linux-lts")
-        echo "${kernel_options[@]}" | grep "linux " | grep "linux-lts" &>/dev/null \
-            && kernel_options+=("linux+linux-lts")
+        if echo "$all_packages" | grep -x "linux" &>/dev/null
+        then
+            kernel_options+=("linux")
+        fi
+        if echo "$all_packages" | grep -x "linux-lts" &>/dev/null
+        then
+            kernel_options+=("linux-lts")
+        fi
+        if echo "${kernel_options[@]}" | grep "linux " | grep "linux-lts" \
+            &>/dev/null
+        then
+            kernel_options+=("linux+linux-lts")
+        fi
 
         echo -e "\n\e[1mEnter an integer or a valid kernel name (can pass a custom kernel not show below):\e[0m\n"
         select OPTION in ${kernel_options[@]} "choose custom"; do
@@ -467,6 +476,41 @@ BOOT_AND_BUFFER_SIZE=$(echo \
             esac
         done
     }
+
+    robust_pacstrap() {
+        location="$1"
+        packages="${@:2}"
+
+        for attempt in {1..5}
+        do
+            if pacstrap $location $packages \
+                >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH"
+            then
+                return 0
+            fi
+
+            sleep 1
+        done
+
+        return 1
+    }
+
+    robust_pacman() {
+        packages="$@"
+
+        for attempt in {1..5}
+        do
+            if pacman -S --noconfirm $packages \
+                >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH"
+            then
+                return 0
+            fi
+
+            sleep 1
+        done
+
+        return 1
+    }
 }
 
 
@@ -482,8 +526,7 @@ then
 fi
 
 {
-    pacman -S --noconfirm fzf arch-install-scripts \
-        >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    robust_pacman fzf arch-install-scripts &
     task_output $! "$STDERR_LOG_PATH" "Install packages needed for script"
     [[ $? -ne 0 ]] && exit 1
 
@@ -633,7 +676,7 @@ fi
             [[ $? -ne 0 ]] && exit 1
             ;;
         "btrfs")
-            pacman -S --noconfirm btrfs-progs >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+            robust_pacman btrfs-progs &
             task_output $! "$STDERR_LOG_PATH" "Download BTRFS Packages"
             [[ $? -ne 0 ]] && exit 1
             {
@@ -679,28 +722,44 @@ fi
 #----------------  Prepare the root partition ------------------
 
 {
+    cpu_vendor=$(lscpu | awk '/Vendor ID/ {print $3}')
+    echo "$cpu_vendor" | grep -i "amd" &>/dev/null \
+        && cpu_microcode_package="amd-ucode"
+    echo "$cpu_vendor" | grep -i "intel" &>/dev/null \
+        && cpu_microcode_package="intel-ucode"
+
+    if [[ -n "$cpu_microcode_package" ]]
+    then
+        robust_pacstrap /mnt $cpu_microcode_package &
+        task_output $! "$STDERR_LOG_PATH" \
+            "Update the CPU microcode to avoid vulnerabilities"
+        [[ $? -ne 0 ]] && exit 1
+    fi
+
     if [[ $uefi_enabled == true ]]
     then
-        pacstrap /mnt efibootmgr dosfstools mtools >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        robust_pacstrap /mnt efibootmgr dosfstools mtools &
         task_output $! "$STDERR_LOG_PATH" "Install UEFI setup tools"
         [[ $? -ne 0 ]] && exit 1
     fi
 
     if [[ $filesystem == "btrfs" ]]
     then
-        pacstrap /mnt btrfs-progs snapper grub-btrfs >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+        robust_pacstrap /mnt btrfs-progs snapper grub-btrfs &
         task_output $! "$STDERR_LOG_PATH" "Install btrfs related packages"
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    pacstrap /mnt base linux-firmware $kernel >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-    task_output $! "$STDERR_LOG_PATH" "Install the kernel(s): '$kernel' (this may take a while)"
+    robust_pacstrap /mnt base linux-firmware $kernel &
+    task_output $! "$STDERR_LOG_PATH" \
+        "Install the kernel(s): '$kernel' (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
-    pacstrap /mnt \
+    robust_pacstrap /mnt \
         os-prober xdg-user-dirs-gtk grub networkmanager sudo htop \
-        base-devel git vim man-db man-pages >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
-    task_output $! "$STDERR_LOG_PATH" "Install base operating system packages (this may take a while)"
+        base-devel git vim man-db man-pages &
+    task_output $! "$STDERR_LOG_PATH" \
+        "Install base operating system packages (this may take a while)"
     [[ $? -ne 0 ]] && exit 1
 
     genfstab -U /mnt >> /mnt/etc/fstab 2>>"$STDERR_LOG_PATH" &
