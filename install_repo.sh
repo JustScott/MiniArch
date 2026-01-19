@@ -67,7 +67,8 @@ configure_pacman()
     [[ $? -ne 0 ]] && return 1
     touch $PACMAN_UPDATED_FILE
 
-    pacman -S --noconfirm archlinux-keyring >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    pacman -S --noconfirm archlinux-keyring \
+        >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Update pacman's keyring"
     [[ $? -ne 0 ]] && return 1
 
@@ -81,15 +82,15 @@ then
     then
         printf "\e[31m%s\n%s\n%s\e[0m" \
             "[!] Failed to configure pacman keys." \
-            " - Likely your system time is off, or your network is having issues." \
+            " - Likely system time is off, or your network had issues." \
             " - Check '$STDERR_LOG_PATH' for error logs."
         exit 1
     fi
 fi
 
-if ! pacman -Q git &>/dev/null
+if ! pacman -Q git fzf &>/dev/null
 then
-    pacman -S --noconfirm git >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
+    pacman -S --noconfirm git fzf >>"$STDOUT_LOG_PATH" 2>>"$STDERR_LOG_PATH" &
     task_output $! "$STDERR_LOG_PATH" "Install git"
     [[ $? -ne 0 ]] && exit 1
 fi
@@ -106,5 +107,32 @@ git clone $REPO_URL \
 task_output $! "$STDERR_LOG_PATH" "Clone the MiniArch repo"
 [[ $? -ne 0 ]] && exit 1
 
-# Run the install script
-bash MiniArch/start_install.sh
+if ! cd MiniArch &>/dev/null
+then
+    printf "\n\e[31m%s%s\e[0m\n\n" \
+        "[!] Failed to cd into MiniArch... this shouldn't happen."
+    exit 1
+fi
+
+chosen_branch="$( \
+    git branch -a \
+    | grep "remotes" \
+    | grep -v "HEAD" \
+    | awk -F'/' '{print $3}' \
+    | fzf --prompt="Choose a branch: " --reverse)"
+
+if [[ -n "$chosen_branch" ]]
+then
+    if ! git checkout "$chosen_branch" &>/dev/null
+    then
+        printf "\n\e[31m%s%s\e[0m\n\n" \
+            "[!] Failed to git checkout '$chosen_branch'... this shouldn't happen."
+        exit 1
+    fi
+    cd ../
+    bash MiniArch/start_install.sh
+else
+    printf "\n\e[31m%s%s\e[0m\n\n" \
+        "[!] No branch chosen... Goodbye"
+    exit 1
+fi
