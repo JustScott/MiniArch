@@ -276,11 +276,11 @@ BOOT_AND_BUFFER_SIZE=$(echo \
         boot_partition_sector_size=$(( $(echo "$BOOT_PARTITION_SIZE" | numfmt --from=iec) / 512 ))
 
         boot_partition="$(echo "$new_partitions" \
-            | grep "$boot_partition_sector_size" \
+            | grep " $boot_partition_sector_size," \
             | awk '{print $1}')"
 
         root_partition="$(echo "$new_partitions" \
-            | grep --invert-match "$boot_partition_sector_size" \
+            | grep --invert-match " $boot_partition_sector_size," \
             | awk '{print $1}')"
 
         echo "boot_partition=\"$boot_partition\"" >> $INSTALLATION_VARIABLES_FILE

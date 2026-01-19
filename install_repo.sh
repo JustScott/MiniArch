@@ -121,6 +121,7 @@ chosen_branch="$( \
     | awk -F'/' '{print $3}' \
     | fzf --prompt="Choose a branch: " --reverse)"
 
+clear
 if [[ -n "$chosen_branch" ]]
 then
     if ! git checkout "$chosen_branch" &>/dev/null
