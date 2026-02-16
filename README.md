@@ -26,14 +26,10 @@ the disk available to select for installation.
 wpa_passphrase <Network SSID> <Network Password> | tee /etc/wpa_supplicant.conf
 wpa_supplicant -Bc /etc/wpa_supplicant.conf -i <Wifi Adapter>
 
-curl -L https://raw.githubusercontent.com/JustScott/MiniArch/refs/heads/main/install_repo.sh | bash
+curl -L -O https://raw.githubusercontent.com/JustScott/MiniArch/refs/heads/main/install_repo.sh
+
+bash install_repo.sh
 ```
-
-## Development
-Testing is done in Virtual Machines to simulate a real environment. If you're
- using QEMU for virtualization, you can cd into the `tests` directory and run
- `make test` to automatically create a fresh Virtual Machine for testing. 
-
 
 ## Troubleshooting post installation issues (not related to MiniArch)
 
