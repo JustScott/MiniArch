@@ -714,8 +714,7 @@ fi
         [[ $? -ne 0 ]] && exit 1
     fi
 
-    mkdir -p /mnt/boot
-    mount $boot_partition /mnt/boot
+    mount --mkdir $boot_partition /mnt/boot
 }
 
 
